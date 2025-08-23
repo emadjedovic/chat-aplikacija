@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
-import 'bootstrap/dist/css/bootstrap.min.css';
-
+import "bootstrap/dist/css/bootstrap.min.css";
+import axios from "axios";
 
 // integrate cache for old messages to avoid expensive database queries
 // should we integrate cache in backend instead of here?
 // why do we need "active" variable?
 
 export const App = () => {
-  const [username, setUsername] = useState(
-    "User_" + Math.floor(Math.random() * 10000)
-  );
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    async function fetchUsername() {
+      const response = await axios.get(
+        "http://localhost:8000/generate-username"
+      );
+      setUsername(response.data.username);
+    }
+
+    fetchUsername();
+  }, []);
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState("");
@@ -78,35 +87,38 @@ export const App = () => {
 
   return (
     <Container fluid>
-      <Row>
-        <Col md={4}>
-          <h3>Active Users</h3>
-          <ul>
-            {users.map((u, i) => (
-              <li key={i}>{u}</li>
-            ))}
-          </ul>
-        </Col>
+      {username ? (
+        <Row>
+          <Col md={4}>
+            <h3>Active Users</h3>
+            <ul>
+              {users.map((u, i) => (
+                <li key={i}>{u}</li>
+              ))}
+            </ul>
+          </Col>
 
-        <Col md={8}>
-          <h3>Global Chat</h3>
-          <div
-          >
-            {messages.map((msg, i) => (
-              <div key={i}>{msg}</div>
-            ))}
-          </div>
-          <div>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
-              style={{ width: "70%", marginRight: "5px" }}
-            />
-            <button onClick={sendMessage}>Send</button>
-          </div>
-        </Col>
-      </Row>
+          <Col md={8}>
+            <h3>Global Chat</h3>
+            <div>
+              {messages.map((msg, i) => (
+                <div key={i}>{msg}</div>
+              ))}
+            </div>
+            <div>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type a message..."
+                style={{ width: "70%", marginRight: "5px" }}
+              />
+              <button onClick={sendMessage}>Send</button>
+            </div>
+          </Col>
+        </Row>
+      ) : (
+        <p>Generating username...</p>
+      )}
     </Container>
   );
 };

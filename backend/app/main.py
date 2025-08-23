@@ -1,30 +1,44 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 import asyncio
 import time
+from seed import generate_history_data
+from fastapi import FastAPI
+from database import SessionLocal, engine, Base
+from contextlib import asynccontextmanager
+from schemas import *
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    generate_history_data(db)
+    db.close()
+
+    yield  # 👈 the application runs here
+
+    # Shutdown
+    # (put cleanup code here if needed, e.g. closing connections)
+    pass
+
+app = FastAPI(lifespan=lifespan)
+
 
 # Store messages + active users
 messages = []
 users = {}
 subscribers = []
 
-# --- MODELS ---
-class Message(BaseModel):
-    username: str
-    text: str
+@app.get("/generate-username")
+def generate_username():
+    username = generate_username();
+    return {"username": username}
 
-class User(BaseModel):
-    username: str
-
-
-# --- ENDPOINTS ---
 
 # Add user to active list
 @app.post("/join")
-async def join(user: User):
+async def join(user: UserIn):
     users[user.username] = time.time()
     return {"status": "ok", "username": user.username}
 
@@ -38,7 +52,7 @@ async def get_users():
 
 # Send message
 @app.post("/send")
-async def send_message(msg: Message):
+async def send_message(msg: MessageIn):
     entry = f"{msg.username}: {msg.text}"
     messages.append(entry)
 
