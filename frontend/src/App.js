@@ -1,28 +1,33 @@
+// App.js
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 
-// integrate cache for old messages to avoid expensive database queries
-// should we integrate cache in backend instead of here?
-// why do we need "active" variable?
+import { Sidebar } from "./Sidebar";
+import { GlobalChat } from "./GlobalChat";
 
 export const App = () => {
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    async function fetchUsername() {
-      const response = await axios.get(
-        "http://localhost:8000/generate-username"
-      );
-      setUsername(response.data.username);
-    }
-
-    fetchUsername();
-  }, []);
+  const [user, setUser] = useState(null)
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    async function generateUsernameAndJoin() {
+      try {
+        const response = await axios.get("http://localhost:8000/generate-username");
+        const generatedUsername = response.data.username;
+        const responseUser = await axios.post("http://localhost:8000/join", {
+          username: generatedUsername,
+        });
+        setUser(responseUser.data);
+      } catch (error) {
+        console.error("Error setting up user:", error);
+      }
+    }
+    generateUsernameAndJoin();
+  }, []);
 
   // --- Polling for messages ---
   useEffect(() => {
@@ -30,9 +35,8 @@ export const App = () => {
 
     const pollMessages = async () => {
       if (!active) return;
-
       try {
-        const res = await fetch("http://localhost:8000/poll-messages");
+        const res = await fetch("http://localhost:8000/messages");
         const data = await res.json();
         if (data.message) {
           setMessages((prev) => [...prev, data.message]);
@@ -40,44 +44,46 @@ export const App = () => {
       } catch (err) {
         console.error("Message polling error:", err);
       }
-
-      // Schedule next poll with random interval 1–3s
       const interval = 1000 + Math.random() * 3000;
       setTimeout(pollMessages, interval);
     };
 
     pollMessages();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // --- Polling for active users ---
   useEffect(() => {
     let active = true;
+
     const pollActiveUsers = async () => {
       if (!active) return;
       try {
-        const res = await fetch("http://localhost:8000/poll-active-users");
+        const res = await fetch("http://localhost:8000/active-users");
         const data = await res.json();
         setUsers(data.users);
       } catch (err) {
         console.error("User polling error:", err);
       }
-      // Schedule next poll with random interval 1–3s
       const interval = 1000 + Math.random() * 3000;
       setTimeout(pollActiveUsers, interval);
     };
 
     pollActiveUsers();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // --- Send message ---
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     try {
       await fetch("http://localhost:8000/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, text: input }),
+        body: JSON.stringify({ username: user.username, content: input }),
       });
       setInput("");
     } catch (err) {
@@ -87,34 +93,15 @@ export const App = () => {
 
   return (
     <Container fluid>
-      {username ? (
+      {user ? (
         <Row>
-          <Col md={4}>
-            <h3>Active Users</h3>
-            <ul>
-              {users.map((u, i) => (
-                <li key={i}>{u}</li>
-              ))}
-            </ul>
-          </Col>
-
-          <Col md={8}>
-            <h3>Global Chat</h3>
-            <div>
-              {messages.map((msg, i) => (
-                <div key={i}>{msg}</div>
-              ))}
-            </div>
-            <div>
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type a message..."
-                style={{ width: "70%", marginRight: "5px" }}
-              />
-              <button onClick={sendMessage}>Send</button>
-            </div>
-          </Col>
+          <Sidebar users={users} />
+          <GlobalChat
+            messages={messages}
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+          />
         </Row>
       ) : (
         <p>Generating username...</p>
