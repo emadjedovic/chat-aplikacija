@@ -8,6 +8,8 @@ from random_username.generate import generate_username
 fake = Faker()
 
 def generate_history_data(db: Session, n_users=50, n_messages=500):
+
+    # ukoliko vec postoje podaci
     if db.query(User).count() > 0:
         return
 
@@ -38,11 +40,22 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
             Message(
                 content=fake.sentence(nb_words=random.randint(3,12)),
                 timestamp=msg_time,
-                user_id=user.id
+                user_id=user.id,
+                username = user.username
             )
         )
 
     db.add_all(messages)
     db.commit()
 
-    print(f"Ubaceno {n_users} usera i {n_messages} poruka...")
+    print(f"Ubaceno {n_users} usera i {n_messages} poruka...\n")
+
+    print("Users:")
+    for u in db.query(User).all():
+        print(f"ID: {u.id}, Username: {u.username}")
+
+    print("\nMessages:")
+    for m in db.query(Message).order_by(Message.timestamp).all():
+        # get the username for each message
+        user = db.query(User).filter(User.id == m.user_id).first()
+        print(f"[{m.timestamp}] {user.username if user else 'Unknown'}: {m.content}")

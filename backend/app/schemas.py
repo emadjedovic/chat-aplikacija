@@ -10,12 +10,14 @@ class UserIn(UserBase):
 
 class UserOut(UserBase):
     id: int
+    last_seen: datetime
 
     class Config:
         from_attributes = True
 
 class MessageBase(BaseModel):
     content: str
+    username: str
 
 class MessageIn(MessageBase):
     user_id: int

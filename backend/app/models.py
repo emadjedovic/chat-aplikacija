@@ -7,6 +7,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String, unique=True, index=True)
+    last_seen = Column(DateTime, default=datetime.now(timezone.utc))
     
     messages = relationship("Message", back_populates="user")
 
@@ -15,6 +16,8 @@ class Message(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     content = Column(Text)
     timestamp = Column(DateTime, default=datetime.now(timezone.utc))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    # kada se user izbrise njegove poruke ostaju
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    username = Column(String) # da nam ostane username nakon brisanja usera
 
     user = relationship("User", back_populates="messages")

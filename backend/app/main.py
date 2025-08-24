@@ -11,20 +11,20 @@ from schemas import *
 from models import User, Message
 import random_username.generate as rug
 from dependencies import get_db
+from datetime import datetime, timezone, timedelta
 
-
+# pokrece se prije aplikacije (setup) i nakon zatvaranja (ciscenje)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # kreira tabele iz modela
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     generate_history_data(db)
     db.close()
 
-    yield  # 👈 the application runs here
+    yield  # app se ovdje pokrece
 
-    # Shutdown
-    # (put cleanup code here if needed, e.g. closing connections)
+    # potencijalno zatvoriti konekcije sve
     pass
 
 app = FastAPI(lifespan=lifespan)
@@ -46,24 +46,37 @@ def join(user: UserIn, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return {"status": "ok", "username": db_user.username}
 
+# poll svakih 5-10 sekundi
+@app.get("/active_users")
+def get_active_users(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        # update da je user jos uvijek online
+        user.last_seen = datetime.now(timezone.utc)
+        db.commit()
+    active_users = db.query(User).filter(
+        User.last_seen > datetime.now(timezone.utc) - timedelta(seconds=60)
+    ).order_by(User.last_seen.desc()).all()
+    return [u.username for u in active_users]
+
+# poll svakih 2-5 sekundi
+# fetch samo poruke koje su novije od zadnjeg timestampa
+@app.get("/messages", response_model=list[MessageOut])
+def get_messages(last_timestamp: datetime = None, db: Session = Depends(get_db)):
+    query = db.query(Message).order_by(Message.timestamp)
+    if last_timestamp:
+        query = query.filter(Message.timestamp > last_timestamp)
+    return query.all()
+
+
 @app.post("/send")
 def send_message(msg: MessageIn, db: Session = Depends(get_db)):
     db_user = db.query(User).filter_by(username=msg.username).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    db_msg = Message(content=msg.text, user_id=db_user.id)
+    db_msg = Message(content=msg.content, user_id=db_user.id)
     db.add(db_msg)
     db.commit()
     db.refresh(db_msg)
     return {"status": "ok", "message_id": db_msg.id}
 
-@app.get("/messages", response_model=list[MessageOut])
-def get_messages(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
-    messages = (
-        db.query(Message)
-        .order_by(Message.timestamp)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-    return messages
