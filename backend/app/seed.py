@@ -9,22 +9,31 @@ fake = Faker()
 
 def generate_history_data(db: Session, n_users=50, n_messages=500):
     if db.query(User).count() > 0:
-        return  # don’t reseed if data exists
+        return
 
-    # Create fake users
-    users = [User(username=generate_username()[0]) for _ in range(n_users)]
+    users = []
+    for _ in range(n_users):
+        users.append(
+            User(
+                # lista of 1 elementa
+                username=generate_username()[0]
+            )
+        )
+        
     db.add_all(users)
     db.commit()
 
-    # Refresh to get IDs
-    users = db.query(User).all()
 
-    # Create fake messages
+    # oduzimamo 30 dana od trenutnog vremena
     start_time = datetime.now(timezone.utc) - timedelta(days=30)
     messages = []
     for _ in range(n_messages):
-        user = random.choice(users)
-        msg_time = start_time + timedelta(minutes=random.randint(0, 60*24*30))
+        user = random.choice(users) # random user
+
+        minutes_in_30_days = 30*24*60
+        random_minute_timestamp = random.randint(0, minutes_in_30_days)
+        msg_time = start_time + timedelta(minutes=random_minute_timestamp)
+
         messages.append(
             Message(
                 content=fake.sentence(nb_words=random.randint(3,12)),
@@ -35,4 +44,5 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
 
     db.add_all(messages)
     db.commit()
-    print(f"Seeded {n_users} users and {n_messages} messages")
+
+    print(f"Ubaceno {n_users} usera i {n_messages} poruka...")

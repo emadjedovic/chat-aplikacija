@@ -1,12 +1,17 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
 import time
 from seed import generate_history_data
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from database import SessionLocal, engine, Base
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
 from schemas import *
+from models import User, Message
+import random_username.generate as rug
+from dependencies import get_db
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,57 +29,41 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
-# Store messages + active users
-messages = []
-users = {}
-subscribers = []
+@app.get("/")
+def read_root():
+    return {"hello": "world"}
 
 @app.get("/generate-username")
 def generate_username():
-    username = generate_username();
+    username = rug.generate_username()
     return {"username": username}
 
-
-# Add user to active list
 @app.post("/join")
-async def join(user: UserIn):
-    users[user.username] = time.time()
-    return {"status": "ok", "username": user.username}
+def join(user: UserIn, db: Session = Depends(get_db)):
+    db_user = User(username=user.username)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return {"status": "ok", "username": db_user.username}
 
-# Get list of active users
-@app.get("/users")
-async def get_users():
-    # remove users inactive >60s
-    now = time.time()
-    active = [u for u, last_seen in users.items() if now - last_seen < 60]
-    return {"users": active}
-
-# Send message
 @app.post("/send")
-async def send_message(msg: MessageIn):
-    entry = f"{msg.username}: {msg.text}"
-    messages.append(entry)
+def send_message(msg: MessageIn, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter_by(username=msg.username).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db_msg = Message(content=msg.text, user_id=db_user.id)
+    db.add(db_msg)
+    db.commit()
+    db.refresh(db_msg)
+    return {"status": "ok", "message_id": db_msg.id}
 
-    # notify waiting pollers
-    for q in subscribers:
-        await q.put(entry)
-    subscribers.clear()
-
-    return {"status": "ok"}
-
-# Long polling endpoint
-@app.get("/poll")
-async def poll_messages(request: Request):
-    q = asyncio.Queue()
-    subscribers.append(q)
-
-    try:
-        # wait until new message or client disconnects
-        msg = await asyncio.wait_for(q.get(), timeout=30.0)
-        return JSONResponse(content={"message": msg})
-    except asyncio.TimeoutError:
-        # no new messages in 30s → return empty
-        return JSONResponse(content={"message": None})
-    except Exception:
-        return JSONResponse(content={"message": None})
+@app.get("/messages", response_model=list[MessageOut])
+def get_messages(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    messages = (
+        db.query(Message)
+        .order_by(Message.timestamp)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return messages
