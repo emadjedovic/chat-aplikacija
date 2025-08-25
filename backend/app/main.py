@@ -55,7 +55,8 @@ def read_root(db: Session = Depends(get_db)):
             "content": m.content,
             "created_at": m.created_at,
             "username": user.username if user else "Anonimus",
-            "type": m.type
+            "type": m.type,
+            "user_id": m.user_id
         })
 
     return {
@@ -130,6 +131,8 @@ def get_messages(db: Session = Depends(get_db)):
 
 # MESSAGES
 
+
+
 '''
 Dva usera mogu zvati polling na poruke u isto vrijeme, pa tu uskace Lock da
 osigura samo jedan request u jednom trenutku koji potencijalno mijenja
@@ -145,35 +148,42 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
         # id najnovije poruke u cacheu
         if message_cache:
             latest_in_cache_id = message_cache[-1]["id"]
-        else:
-            latest_in_cache_id = 0
-
-        # zadnje pogledana poruka je dio cachea
-        if message_cache:
             first_cache_id = message_cache[0]["id"]
         else:
+            latest_in_cache_id = 0
             first_cache_id = 0
+
+        new_messages = []
 
         if last_seen_id >= first_cache_id:
             # vracamo samo neprocitane poruke
-            new_messages = []
             for m in message_cache:
                 if m["id"] > last_seen_id:
                     new_messages.append(m)
         # moramo dobaviti i one poruke koje vise nisu u cacheu
         else:
-            new_messages = (
+            db_msgs = (
                 db.query(Message)
                 .filter(Message.id > last_seen_id)
                 .order_by(Message.id.asc())
                 .all()
             )
+            new_messages = []
+            for m in db_msgs:
+                serialized = serialize_message(m)
+                new_messages.append(serialized)
 
         if new_messages:
-            last_seen_id = new_messages[-1].id
+            last_seen_id = new_messages[-1]["id"]
+
         last_seen_by_users[user_id] = (last_seen_id, now)
 
-    return new_messages
+    result_messages = []
+    for m in new_messages:
+        msg_des = deserialize(m)
+        result_messages.append(msg_des)
+
+    return result_messages
     
 
 def cleanup_inactive_users(sleep_seconds=60, threshold=300):
