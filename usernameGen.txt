@@ -1,0 +1,69 @@
+USERNAME GENERATION
+
+generate a short hash or use a UUID library, then trim it
+uniqueness guaranteed
+
+import { v4 as uuidv4 } from 'uuid';
+
+function generateUsername() {
+  return "user" + uuidv4().slice(0, 6); 
+}
+------------------
+from fastapi import FastAPI
+import uuid
+
+app = FastAPI()
+
+@app.get("/generate-username")
+def generate_username():
+    # Generate a unique random username
+    username = "user-" + str(uuid.uuid4())[:8]  # short UUID
+    return {"username": username}
+
+------------------
+No database check is needed; the probability of collision is extremely low.
+---------------------------
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+
+function App() {
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    async function fetchUsername() {
+      const response = await axios.get("http://localhost:8000/generate-username");
+      setUsername(response.data.username);
+    }
+
+    fetchUsername();
+  }, []);
+
+  return (
+    <div>
+      <h1>Welcome!</h1>
+      {username ? (
+        <p>Your username: <strong>{username}</strong></p>
+      ) : (
+        <p>Generating username...</p>
+      )}
+    </div>
+  );
+}
+----------------------------------
+
+import uuid
+from random_word import RandomWords
+
+r = RandomWords()
+
+def generate_username():
+    word1 = r.get_random_word()
+    word2 = r.get_random_word()
+    short_id = str(uuid.uuid4())[:4]
+    return f"{word1}{word2}-{short_id}"
+
+# Example: "sunshineeagle-1a2b"
+
+
+export default App;
+
