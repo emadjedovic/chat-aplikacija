@@ -10,6 +10,7 @@ import random_username.generate as rug
 from dependencies import get_db
 from datetime import datetime, timezone, timedelta
 from fastapi.middleware.cors import CORSMiddleware
+from cache import *
 
 # pokrece se prije aplikacije (setup) i nakon zatvaranja (ciscenje)
 @asynccontextmanager
@@ -75,7 +76,7 @@ def join(username: str, db: Session = Depends(get_db)):
     return db_user
 
 # poll svakih 5-10 sekundi
-@app.get("/active_users")
+@app.get("/active-users")
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
     if user:
@@ -122,59 +123,57 @@ def get_messages(last_timestamp: datetime = None, db: Session = Depends(get_db))
     return query.all()
     '''
 
-@app.get("/messages", response_model=list[MessageOut])
+@app.get("/messages/all", response_model=list[MessageOut])
 def get_messages(db: Session = Depends(get_db)):
     query = db.query(Message).order_by(Message.created_at).all()
     return query
 
 # MESSAGES
 
-from collections import deque
-# djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
-from threading import Lock, Thread
-import time
-
-'''
-The Lock is used to prevent concurrent access to shared data, and with is a construct that handles entering and exiting contexts, like acquiring and releasing the lock. "with" ensures that recources are cleaned up properly when the block ends, even if an exception occurs.
-
-If one thread is inside a "with lock: block", other threads trying to acquire the same lock will wait until it's released. This prevents race conditions, e.g., two threads appending to message_cache at the same time, which could corrupt the deque.
-'''
-
-MAX_CACHE_SIZE = 1000 # max broj poruka koje cuvamo u memoriji
-# za dovoljno velik cache najveci broj poll poziva nece zahtjevati upit nad bazom
-message_cache = deque(maxlen=MAX_CACHE_SIZE)
-lock = Lock()
-
-# svaku novu poruku odmah dodajemo u cache
-def add_message_to_cache(msg):
-    with lock:
-        message_cache.append(msg)
-
-# userima dobavljamo samo poruke koje nisu stigli procitati, moramo pamtiti
-# dokle je svaki user dosao u citanju poruke
-last_seen_by_users = {} # mapa obicna user id -> (index zadnje procitane poruke, zadnji timestamp aktivnosti usera)
-# periodicno cistiti za neaktivne usere
-
 '''
 Dva usera mogu zvati polling na poruke u isto vrijeme, pa tu uskace Lock da
 osigura samo jedan request u jednom trenutku koji potencijalno mijenja
 zajednicke strukture (message_cache)
 '''
-@app.get("/messages2", response_model=list[MessageOut])
-def get_messages2(user_id: int):
+@app.get("/messages/new", response_model=list[MessageOut])
+def new_messages(user_id: int, db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
     with lock:
         # ukoliko user nije u ovoj mapi, znaci da nije vidio nista poruka do sad
         # (dobavljanje se vrsi od pocetka - indeksa 0)
-        start_index = last_seen_by_users.get(user_id, 0)
-        # konvertujemo deque u listu prije indeksiranja
-        new_messages = list(message_cache)[start_index:]
-        # sve poruke procitane (sav cache je vidjen od strane ovog usera)
-        last_seen_by_users[user_id] = (
-            len(message_cache),
-            datetime.now(timezone.utc)
-        )
+        last_seen_id, _ = last_seen_by_users.get(user_id, (0, now))
+        # id najnovije poruke u cacheu
+        if message_cache:
+            latest_in_cache_id = message_cache[-1]["id"]
+        else:
+            latest_in_cache_id = 0
 
-        return new_messages
+        # zadnje pogledana poruka je dio cachea
+        if message_cache:
+            first_cache_id = message_cache[0]["id"]
+        else:
+            first_cache_id = 0
+
+        if last_seen_id >= first_cache_id:
+            # vracamo samo neprocitane poruke
+            new_messages = []
+            for m in message_cache:
+                if m["id"] > last_seen_id:
+                    new_messages.append(m)
+        # moramo dobaviti i one poruke koje vise nisu u cacheu
+        else:
+            new_messages = (
+                db.query(Message)
+                .filter(Message.id > last_seen_id)
+                .order_by(Message.id.asc())
+                .all()
+            )
+
+        if new_messages:
+            last_seen_id = new_messages[-1].id
+        last_seen_by_users[user_id] = (last_seen_id, now)
+
+    return new_messages
     
 
 def cleanup_inactive_users(sleep_seconds=60, threshold=300):
@@ -192,6 +191,7 @@ def cleanup_inactive_users(sleep_seconds=60, threshold=300):
 # thread za ciscenje
 Thread(target=cleanup_inactive_users, daemon=True).start()
 
+# id is the issue
 @app.post("/send")
 def send_message(msg: MessageIn, db: Session = Depends(get_db)):
     db_user = db.query(User).filter_by(username=msg.username).first()
@@ -201,5 +201,6 @@ def send_message(msg: MessageIn, db: Session = Depends(get_db)):
     db.add(db_msg)
     db.commit()
     db.refresh(db_msg)
+    add_message_to_cache(db_msg)
     return db_msg
 

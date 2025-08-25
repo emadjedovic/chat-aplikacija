@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from models import User, Message, MessageType
 from datetime import datetime, timedelta, timezone
 from random_username.generate import generate_username
+from cache import add_message_to_cache
 
 fake = Faker()
 
@@ -57,6 +58,13 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
 
     db.add_all(messages)
     db.commit()
+
+    # da osiguramo id-ove
+    for msg in messages:
+        db.refresh(msg)
+
+    for msg in messages:
+        add_message_to_cache(msg)
 
     print(f"Ubaceno {n_users} usera i {n_messages} poruka...\n")
 

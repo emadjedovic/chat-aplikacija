@@ -32,8 +32,6 @@ class MessageOut(MessageBase):
     id: int
     created_at: datetime
     user_id: int
-    # optionally include user info
-    user: Optional[UserOut] = None
 
     class Config:
         from_attributes = True

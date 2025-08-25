@@ -36,7 +36,7 @@ export const App = () => {
     const pollMessages = async () => {
       if (!active) return;
       try {
-        const res = await fetch("http://localhost:8000/messages");
+        const res = await fetch("http://localhost:8000/messages/new");
         const data = await res.json();
         if (data.message) {
           setMessages((prev) => [...prev, data.message]);
