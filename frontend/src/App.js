@@ -8,7 +8,7 @@ import { Sidebar } from "./Sidebar";
 import { GlobalChat } from "./GlobalChat";
 
 export const App = () => {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState("");
@@ -16,11 +16,12 @@ export const App = () => {
   useEffect(() => {
     async function generateUsernameAndJoin() {
       try {
-        const response = await axios.get("http://localhost:8000/generate-username");
-        const generatedUsername = response.data.username;
-        const responseUser = await axios.post("http://localhost:8000/join", {
-          username: generatedUsername,
-        });
+        const response = await axios.get(
+          "http://localhost:8000/generate-username"
+        );
+        const generatedUsername = response.data;
+        console.log(generatedUsername);
+        const responseUser = await axios.post(`http://localhost:8000/join?username=${generatedUsername}`);
         setUser(responseUser.data);
       } catch (error) {
         console.error("Error setting up user:", error);
@@ -31,15 +32,18 @@ export const App = () => {
 
   // --- Polling for messages ---
   useEffect(() => {
+    if(!user) return;
     let active = true;
 
     const pollMessages = async () => {
       if (!active) return;
       try {
-        const res = await fetch("http://localhost:8000/messages/new");
+        const res = await fetch(
+          `http://localhost:8000/messages/new?user_id=${user.id}`
+        );
         const data = await res.json();
-        if (data.message) {
-          setMessages((prev) => [...prev, data.message]);
+        if (data && Array.isArray(data)) {
+          setMessages((prev) => [...prev, ...data]);
         }
       } catch (err) {
         console.error("Message polling error:", err);
@@ -52,18 +56,20 @@ export const App = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   // --- Polling for active users ---
   useEffect(() => {
+    if(!user) return;
     let active = true;
 
     const pollActiveUsers = async () => {
       if (!active) return;
       try {
-        const res = await fetch("http://localhost:8000/active-users");
+        const res = await fetch(`http://localhost:8000/active-users?current_user_id=${user.id}`);
         const data = await res.json();
-        setUsers(data.users);
+        console.log("data: ", data)
+        setUsers(data);
       } catch (err) {
         console.error("User polling error:", err);
       }
@@ -75,7 +81,7 @@ export const App = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -96,6 +102,7 @@ export const App = () => {
       {user ? (
         <Row>
           <Sidebar users={users} />
+          
           <GlobalChat
             messages={messages}
             input={input}

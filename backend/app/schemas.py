@@ -24,14 +24,14 @@ class MessageBase(BaseModel):
     content: str
     username: Optional[str] = None
     type: MessageType
+    user_id: Optional[int]=None
 
 class MessageIn(MessageBase):
-    user_id: int
+    pass
 
 class MessageOut(MessageBase):
     id: int
     created_at: datetime
-    user_id: int
 
     class Config:
         from_attributes = True

@@ -87,6 +87,7 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
 
 
         result.append({
+            "id": u.id,
             "username": u.username,
             "joined_recently": u.created_at > ten_seconds_before
         })

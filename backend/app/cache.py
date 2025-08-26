@@ -4,7 +4,7 @@ from collections import deque
 from threading import Lock, Thread
 import time
 from models import Message
-from schemas import MessageOut
+from schemas import MessageOut, MessageType
 
 '''
 The Lock is used to prevent concurrent access to shared data, and with is a construct that handles entering and exiting contexts, like acquiring and releasing the lock. "with" ensures that recources are cleaned up properly when the block ends, even if an exception occurs.
@@ -24,7 +24,7 @@ def serialize_message(msg: Message):
         "username": msg.username,
         "type": msg.type.value,
         "created_at": msg.created_at.isoformat(),
-        "user_id": msg.user_id
+        "user_id": msg.user_id if msg.type == MessageType.USER_MESSAGE else None
     }
 
 def deserialize(d):
@@ -34,7 +34,7 @@ def deserialize(d):
         username=d["username"],
         type=d["type"],
         created_at=d["created_at"],
-        user_id=d["user_id"]
+        user_id=d["user_id"] if d["type"] == MessageType.USER_MESSAGE else None
     )
 
 

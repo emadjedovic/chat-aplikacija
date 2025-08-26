@@ -7,8 +7,10 @@ export const Sidebar = ({ users }) => {
       <h3>Active Users</h3>
       {users ? (
         <ul>
-          {users.map((u, i) => (
-            <li key={i}>{u}</li>
+          {users.map(u => (
+            <li key={u.id}>
+              {u.username} {u.joined_recently ? "(joined recently)" : ""}
+            </li>
           ))}
         </ul>
       ) : (
