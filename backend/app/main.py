@@ -84,6 +84,38 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
             )
             db.add(system_msg)
             db.commit()
+            add_message_to_cache(system_msg)
+
+
+        result.append({
+            "id": u.id,
+            "username": u.username,
+            "joined_recently": u.created_at > ten_seconds_before
+        })
+
+    return result
+
+
+@app.get("/active-users-test")
+def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user_id).first()
+    if user:
+        user.last_online = datetime.now(timezone.utc)
+        db.commit()
+    active_users = db.query(User).order_by(User.last_online.desc()).all()
+
+    result = []
+    for u in active_users:
+        ten_seconds_before = (datetime.utcnow() - timedelta(seconds=20))
+        if u.created_at > ten_seconds_before:
+            system_msg = Message(
+                content=f"{u.username} joined the chat!",
+                type=MessageType.SYSTEM,
+                created_at=datetime.now(timezone.utc)
+            )
+            db.add(system_msg)
+            db.commit()
+            add_message_to_cache(system_msg)
 
 
         result.append({

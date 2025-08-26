@@ -1,24 +1,36 @@
 import React from "react";
-import { Col } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 
 export const GlobalChat = ({ messages, input, setInput, sendMessage }) => {
+  // {content, username, type, user_id, id, created_at}
   return (
-    <Col md={8}>
+    <Container>
       <h3>Global Chat</h3>
-      <div style={{ maxHeight: "400px", overflowY: "auto", marginBottom: "10px" }}>
-        {messages.map((msg, i) => (
-          <div key={i}>{msg}</div>
-        ))}
-      </div>
-      <div>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
-          style={{ width: "70%", marginRight: "5px" }}
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
-    </Col>
+
+      {messages ? (
+        <div>
+          {messages.map((m) => (
+            // is type is system style gray, else style in color
+            <div key={m.id}>
+              {m.created_at} <br></br>
+              {m.username}
+              <br></br>
+              {m.content}
+              <br></br>
+            </div>
+          ))}
+          <div>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type a message..."
+            />
+            <button onClick={sendMessage}>Send</button>
+          </div>
+        </div>
+      ) : (
+        <p>Loading Messages...</p>
+      )}
+    </Container>
   );
 };

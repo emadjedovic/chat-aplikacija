@@ -1,21 +1,30 @@
 import React from "react";
-import { Col } from "react-bootstrap";
+import { Container, Row, Col, ListGroup, Card } from "react-bootstrap";
 
 export const Sidebar = ({ users }) => {
   return (
-    <Col md={4}>
-      <h3>Active Users</h3>
-      {users ? (
-        <ul>
-          {users.map(u => (
-            <li key={u.id}>
-              {u.username} {u.joined_recently ? "(joined recently)" : ""}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>Loading active users...</p>
-      )}
-    </Col>
+    <Container>
+      <Card>
+        <Card.Header style={{backgroundColor:"black", color: "white"}}>
+          Aktivni korisnici
+        </Card.Header>
+        <Card.Body className="p-0">
+          {users ? (
+            <ListGroup className="overflow-auto" style={{ maxHeight: "85vh" }}>
+              {users.map(u => (
+                <ListGroup.Item key={u.id}>
+                  <span>{u.username}</span>
+                  {u.joined_recently && (
+                    <span className="badge bg-success">new</span>
+                  )}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          ) : (
+            <p className="m-3">Loading active users...</p>
+          )}
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };

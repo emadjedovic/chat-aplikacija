@@ -1,9 +1,8 @@
 // App.js
 import React, { useState, useEffect } from "react";
-import { Container, Row } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
-
 import { Sidebar } from "./Sidebar";
 import { GlobalChat } from "./GlobalChat";
 
@@ -21,7 +20,9 @@ export const App = () => {
         );
         const generatedUsername = response.data;
         console.log(generatedUsername);
-        const responseUser = await axios.post(`http://localhost:8000/join?username=${generatedUsername}`);
+        const responseUser = await axios.post(
+          `http://localhost:8000/join?username=${generatedUsername}`
+        );
         setUser(responseUser.data);
       } catch (error) {
         console.error("Error setting up user:", error);
@@ -32,11 +33,10 @@ export const App = () => {
 
   // --- Polling for messages ---
   useEffect(() => {
-    if(!user) return;
-    let active = true;
+    if (!user) return;
+    const intervalTime = 2000 + Math.random() * 3000;
 
-    const pollMessages = async () => {
-      if (!active) return;
+    const pollMessages = setInterval(async () => {
       try {
         const res = await fetch(
           `http://localhost:8000/messages/new?user_id=${user.id}`
@@ -48,39 +48,27 @@ export const App = () => {
       } catch (err) {
         console.error("Message polling error:", err);
       }
-      const interval = 1000 + Math.random() * 3000;
-      setTimeout(pollMessages, interval);
-    };
-
-    pollMessages();
-    return () => {
-      active = false;
-    };
+    }, intervalTime);
+    return () => clearInterval(pollMessages);
   }, [user]);
 
   // --- Polling for active users ---
   useEffect(() => {
-    if(!user) return;
-    let active = true;
+    if (!user) return;
+    const intervalTime = 5000 + Math.random() * 5000;
 
-    const pollActiveUsers = async () => {
-      if (!active) return;
+    const pollActiveUsers = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:8000/active-users?current_user_id=${user.id}`);
+        const res = await fetch(
+          `http://localhost:8000/active-users?current_user_id=${user.id}`
+        );
         const data = await res.json();
-        console.log("data: ", data)
         setUsers(data);
       } catch (err) {
         console.error("User polling error:", err);
       }
-      const interval = 1000 + Math.random() * 3000;
-      setTimeout(pollActiveUsers, interval);
-    };
-
-    pollActiveUsers();
-    return () => {
-      active = false;
-    };
+    }, intervalTime);
+    return () => clearInterval(pollActiveUsers);
   }, [user]);
 
   const sendMessage = async () => {
@@ -98,17 +86,20 @@ export const App = () => {
   };
 
   return (
-    <Container fluid>
+    <Container fluid className="mt-4">
       {user ? (
         <Row>
-          <Sidebar users={users} />
-          
-          <GlobalChat
-            messages={messages}
-            input={input}
-            setInput={setInput}
-            sendMessage={sendMessage}
-          />
+          <Col sm={5} md={4} xl={3}>
+            <Sidebar users={users} />
+          </Col>
+          <Col sm={7} md={8} xl={9}>
+            <GlobalChat
+              messages={messages}
+              input={input}
+              setInput={setInput}
+              sendMessage={sendMessage}
+            />
+          </Col>
         </Row>
       ) : (
         <p>Generating username...</p>
