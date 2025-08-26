@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from models import User, Message, MessageType
 from datetime import datetime, timedelta, timezone
 from random_username.generate import generate_username
-from cache import add_message_to_cache
+from cache import add_message_to_cache, message_cache
 
 fake = Faker()
 
@@ -30,20 +30,20 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
 
     # oduzimamo 30 dana od trenutnog vremena
     start_time = datetime.now(timezone.utc) - timedelta(days=30)
+
     messages = []
-    for _ in range(n_messages):
-        user = random.choice(users) # random user
+    for i in range(n_messages):
+        user = random.choice(users)
 
-        minutes_in_30_days = 30*24*60
-        random_minute_timestamp = random.randint(0, minutes_in_30_days)
-        msg_time = start_time + timedelta(minutes=random_minute_timestamp)
+        # created_at se povecava za 1s svaku iducu poruku
+        msg_time = start_time + timedelta(seconds=i)
 
-        # 10% sansa da poruka bude tipa SYSTEM (obavijest da se prikljucio novi user)
-        if random.random() < 0.1:
-            random_type = MessageType.SYSTEM
-            username = None  # system poruka nema usera
+        # 10% sansa da bude system poruka
+        if random.random() <= 0.1:
+            msg_type = MessageType.SYSTEM
+            username = None
         else:
-            random_type = MessageType.USER_MESSAGE
+            msg_type = MessageType.USER_MESSAGE
             username = user.username
 
         messages.append(
@@ -51,8 +51,8 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
                 content=fake.sentence(nb_words=random.randint(3,12)),
                 created_at=msg_time,
                 user_id=user.id,
-                username = username,
-                type=random_type
+                username=username,
+                type=msg_type
             )
         )
 
@@ -63,19 +63,9 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
     for msg in messages:
         db.refresh(msg)
 
-    for msg in messages:
+    # osigurati uredjenje po ID
+    for msg in sorted(messages, key=lambda m: m.id):
         add_message_to_cache(msg)
 
+    print("cache size: ", len(message_cache))
     print(f"Ubaceno {n_users} usera i {n_messages} poruka...\n")
-
-    '''
-    print("Users:")
-    for u in db.query(User).all():
-        print(f"ID: {u.id}, Username: {u.username}")
-
-    print("\nMessages:")
-    for m in db.query(Message).order_by(Message.created_at).all():
-        # username za svaku poruku
-        user = db.query(User).filter(User.id == m.user_id).first()
-        print(f"[{m.created_at}] {user.username if user else 'Anonimus'}: {m.content}")
-        '''

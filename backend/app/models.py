@@ -8,7 +8,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String, unique=True, index=True)
-    last_seen = Column(DateTime, default=datetime.now(timezone.utc))
+    last_online = Column(DateTime, default=datetime.now(timezone.utc))
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     
     messages = relationship("Message", back_populates="user")

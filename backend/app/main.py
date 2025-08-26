@@ -39,29 +39,11 @@ app.add_middleware(
 @app.get("/")
 def read_root(db: Session = Depends(get_db)):
     users_db = db.query(User).all()
-    users_list = []
-    for u in users_db:
-        users_list.append({
-            "id": u.id,
-            "username": u.username
-        })
-
     messages_db = db.query(Message).order_by(Message.created_at).all()
-    messages_list = []
-    for m in messages_db:
-        user = db.query(User).filter(User.id == m.user_id).first()
-        messages_list.append({
-            "id": m.id,
-            "content": m.content,
-            "created_at": m.created_at,
-            "username": user.username if user else "Anonimus",
-            "type": m.type,
-            "user_id": m.user_id
-        })
 
     return {
-        "users": users_list,
-        "messages": messages_list
+        "users": users_db,
+        "messages": messages_db
     }
 
 @app.get("/generate-username")
@@ -82,13 +64,13 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
     if user:
         # update da je user jos uvijek online
-        user.last_seen = datetime.now(timezone.utc)
+        user.last_online = datetime.now(timezone.utc)
         db.commit()
 
     # samo aktivni useri, odnosno aktivnost do 20s
     active_users = db.query(User).filter(
-        User.last_seen > (datetime.utcnow() - timedelta(seconds=20))
-    ).order_by(User.last_seen.desc()).all()
+        User.last_online > (datetime.utcnow() - timedelta(seconds=20))
+    ).order_by(User.last_online.desc()).all()
 
     result = []
     for u in active_users:
@@ -144,27 +126,28 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
     with lock:
         # ukoliko user nije u ovoj mapi, znaci da nije vidio nista poruka do sad
         # (dobavljanje se vrsi od pocetka - indeksa 0)
-        last_seen_id, _ = last_seen_by_users.get(user_id, (0, now))
-        # id najnovije poruke u cacheu
+        last_seen_msg_id, _ = last_seen_by_users.get(user_id, (0, now))
+        
         if message_cache:
-            latest_in_cache_id = message_cache[-1]["id"]
             first_cache_id = message_cache[0]["id"]
+            latest_in_cache_id = message_cache[-1]["id"]
         else:
-            latest_in_cache_id = 0
-            first_cache_id = 0
+            # nema poruka u cacheu
+            first_cache_id = -1
+            latest_in_cache_id = -1
 
         new_messages = []
 
-        if last_seen_id >= first_cache_id:
+        if last_seen_msg_id >= first_cache_id and message_cache:
             # vracamo samo neprocitane poruke
             for m in message_cache:
-                if m["id"] > last_seen_id:
+                if m["id"] > last_seen_msg_id:
                     new_messages.append(m)
         # moramo dobaviti i one poruke koje vise nisu u cacheu
         else:
             db_msgs = (
                 db.query(Message)
-                .filter(Message.id > last_seen_id)
+                .filter(Message.id > last_seen_msg_id)
                 .order_by(Message.id.asc())
                 .all()
             )
@@ -174,9 +157,9 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
                 new_messages.append(serialized)
 
         if new_messages:
-            last_seen_id = new_messages[-1]["id"]
+            last_seen_msg_id = new_messages[-1]["id"]
 
-        last_seen_by_users[user_id] = (last_seen_id, now)
+        last_seen_by_users[user_id] = (last_seen_msg_id, now)
 
     result_messages = []
     for m in new_messages:
@@ -201,10 +184,9 @@ def cleanup_inactive_users(sleep_seconds=60, threshold=300):
 # thread za ciscenje
 Thread(target=cleanup_inactive_users, daemon=True).start()
 
-# id is the issue
 @app.post("/send")
 def send_message(msg: MessageIn, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter_by(username=msg.username).first()
+    db_user = db.query(User).filter(User.username==msg.username).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     db_msg = Message(content=msg.content, user_id=db_user.id, username=db_user.username, type=MessageType.USER_MESSAGE)

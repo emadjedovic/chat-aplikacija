@@ -17,15 +17,6 @@ MAX_CACHE_SIZE = 1000 # max broj poruka koje cuvamo u memoriji
 message_cache = deque(maxlen=MAX_CACHE_SIZE)
 lock = Lock()
 
-# svaku novu poruku odmah dodajemo u cache
-# mozda da konvertujemo u mapu prije dodavanja u cache?
-'''
-def add_message_to_cache(msg: Message):
-    with lock:
-        message_cache.append(msg)
-
-        
-'''
 def serialize_message(msg: Message):
     return {
         "id": msg.id,
@@ -46,13 +37,16 @@ def deserialize(d):
         user_id=d["user_id"]
     )
 
+
+# svaku novu poruku odmah dodajemo u cache
 def add_message_to_cache(msg: Message):
     serialized_msg = serialize_message(msg)
     with lock:
         message_cache.append(serialized_msg)
+        print("\nAdded to cache: ", serialized_msg)
 
 
-# userima dobavljamo samo poruke koje nisu stigli procitati, moramo pamtiti
-# dokle je svaki user dosao u citanju poruke
-last_seen_by_users = {} # mapa obicna user id -> (index zadnje procitane poruke, zadnji timestamp aktivnosti usera)
+# userima dobavljamo samo poruke koje nisu stigli procitati
+# moramo pamtiti dokle je svaki user dosao u citanju poruke
+last_seen_by_users = {} # mapa user_id -> (index zadnje procitane poruke, zadnji timestamp aktivnosti usera)
 # periodicno cistiti za neaktivne usere

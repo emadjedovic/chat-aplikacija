@@ -15,7 +15,7 @@ class UserIn(UserBase):
 
 class UserOut(UserBase):
     id: int
-    last_seen: datetime
+    last_online: datetime
 
     class Config:
         from_attributes = True
