@@ -3,7 +3,8 @@ import { Container, Row, Col, ListGroup, Card } from "react-bootstrap";
 
 export const Sidebar = ({ users }) => {
   return (
-    <Container>
+    <Container className="pt-3">
+      <h3 className="text-center mb-4">&nbsp;</h3>
       <Card>
         <Card.Header style={{backgroundColor:"black", color: "white"}}>
           Aktivni korisnici

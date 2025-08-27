@@ -1,0 +1,5 @@
+/* CSS HEX */
+--black: #00000000;
+--english-violet: #463C53ff;
+--vermilion: #F74C43ff;
+--off-red-rgb: #EB1C07ff;
