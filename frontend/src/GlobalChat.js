@@ -1,9 +1,15 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { MessageBubble } from "./MessageBubble";
-import "./globalChat.css";
+import { BsArrowDown } from "react-icons/bs";
 
-export const GlobalChat = ({ messages, input, setInput, sendMessage, user }) => {
+export const GlobalChat = ({
+  messages,
+  input,
+  setInput,
+  sendMessage,
+  user,
+}) => {
   const chatEndRef = useRef(null);
 
   // scroll do dna kad se klikne dugme za isto
@@ -13,44 +19,39 @@ export const GlobalChat = ({ messages, input, setInput, sendMessage, user }) => 
 
   return (
     <Container fluid className="p-3">
-      <h3 className="text-center mb-4">Global Chat</h3>
+      <h3 className="text-center mb-4"><b>Globalni Chat</b></h3>
 
       {messages.length > 0 ? (
         <div className="chat-container">
-        {messages.map((m) => (
-          <MessageBubble
-            key={m.id}
-            message={m}
-            isCurrentUser={user && m.user_id === user.id}
-          />
-        ))}
-        <div ref={chatEndRef} />
-      </div>
+          {messages.map((m) => (
+            <MessageBubble
+              message={m}
+              isCurrentUser={user && m.user_id === user.id}
+            />
+          ))}
+          <div ref={chatEndRef} />
+        </div>
       ) : (
-        <p>Loading Messages...</p>
+        <p>Učitavanje poruka...</p>
       )}
 
-      {/* Button to scroll down */}
-      <Row className="mt-2 mb-3">
-        <Col className="d-grid">
-          <Button variant="secondary" onClick={scrollToBottom}>
-            Scroll to Bottom
+      <Row className="mt-3">
+        <Col xs={4} lg={2} className="d-grid px-1">
+          <Button variant="light" onClick={scrollToBottom}>
+            Idi na dno
           </Button>
         </Col>
-      </Row>
-
-      <Row className="mt-3">
-        <Col xs={9}>
+        <Col xs={6} lg={8} className="px-1 d-grid">
           <Form.Control
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
+            placeholder="Upiši poruku..."
           />
         </Col>
-        <Col xs={3} className="d-grid">
+        <Col xs={2} lg={2} className="px-1 d-grid">
           <Button variant="danger" onClick={sendMessage}>
-            Send
+            Pošalji
           </Button>
         </Col>
       </Row>

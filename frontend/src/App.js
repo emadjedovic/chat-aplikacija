@@ -5,6 +5,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { Sidebar } from "./Sidebar";
 import { GlobalChat } from "./GlobalChat";
+import './index.css';
+import "./globalChat.css";
 
 export const App = () => {
   const [user, setUser] = useState(null);
@@ -61,7 +63,7 @@ export const App = () => {
     const pollActiveUsers = setInterval(async () => {
       try {
         const responseUsers = await axios.get(
-          `http://localhost:8000/active-users?current_user_id=${user.id}`
+          `http://localhost:8000/active-users-test?current_user_id=${user.id}`
         );
         console.log("responseUsers.data: ", responseUsers.data)
         setUsers(responseUsers.data);
@@ -91,10 +93,10 @@ export const App = () => {
     <Container fluid className="mt-4">
       {user ? (
         <Row>
-          <Col sm={5} md={4} xl={3}>
+          <Col sm={4} md={4} xl={3} className="px-1">
             <Sidebar users={users} />
           </Col>
-          <Col sm={7} md={8} xl={9}>
+          <Col sm={8} md={8} xl={9} className="px-1">
             <GlobalChat
               messages={messages}
               input={input}

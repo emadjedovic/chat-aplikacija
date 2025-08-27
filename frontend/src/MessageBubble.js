@@ -2,8 +2,8 @@ import React from "react";
 import "./globalChat.css";
 
 export const MessageBubble = ({ message, isCurrentUser }) => {
-  if (message.type === "SYSTEM") {
-    return <div className="system-message">{message.content}</div>;
+  if (message.type === "system") {
+    return <div className="system-message" key={message.id}>{message.content}</div>;
   }
 
   return (

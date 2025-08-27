@@ -1,25 +1,19 @@
-/* palette.css */
+/* iz palette.txt */
 :root {
   --black: #00000000;
   --english-violet: #463C53ff;
-  --vermilion: #F74C43ff;
+  --vermilion: rgb(132, 41, 36);
   --off-red-rgb: #EB1C07ff;
 }
 
 .chat-container {
-  height: 60vh;
+  height: 70vh;
   overflow-y: auto;
   padding: 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid lightgray;
   border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.system-message {
-  text-align: center;
-  color: gray;
-  font-style: italic;
-  margin: 0.5rem 0;
+  background-color: whitesmoke;
+  font-size: 0.9rem;
 }
 
 .message-row {
@@ -27,10 +21,25 @@
   margin: 0.5rem 0;
 }
 
+.system-message {
+  text-align: center;
+  font-size: 0.8rem;
+  width: fit-content;
+  max-width: 60%;
+  margin: auto;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  border-radius: 2rem;
+  border: 1px solid gainsboro;
+  padding: 10px 20px;
+  background-color: lightgray;
+  font-style: italic;
+}
+
 .current-user-message {
   margin-left: auto;
   max-width: 70%;
-  padding: 10px 14px;
+  padding: 10px 15px;
   border-radius: 15px;
   background-color: var(--vermilion);
   color: white;
@@ -46,7 +55,7 @@
 }
 
 .message-username {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   opacity: 0.8;
   margin-bottom: 4px;
 }
