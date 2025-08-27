@@ -23,7 +23,7 @@ class UserOut(UserBase):
 class MessageBase(BaseModel):
     content: str
     username: Optional[str] = None
-    type: MessageType
+    type: Optional[MessageType] = MessageType.USER_MESSAGE
     user_id: Optional[int]=None
 
 class MessageIn(MessageBase):

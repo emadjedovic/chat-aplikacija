@@ -48,11 +48,12 @@ def read_root(db: Session = Depends(get_db)):
 
 @app.get("/generate-username")
 def generate_username():
-    return rug.generate_username()[0]
+    result = rug.generate_username()[0]
+    return {"username": result}
 
 @app.post("/join")
-def join(username: str, db: Session = Depends(get_db)):
-    db_user = User(username=username)
+def join(usernameReq: UserIn, db: Session = Depends(get_db)):
+    db_user = User(username=usernameReq.username)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

@@ -15,14 +15,14 @@ export const App = () => {
   useEffect(() => {
     async function generateUsernameAndJoin() {
       try {
-        const response = await axios.get(
+        const responseUsername = await axios.get(
           "http://localhost:8000/generate-username"
         );
-        const generatedUsername = response.data;
-        console.log(generatedUsername);
-        const responseUser = await axios.post(
-          `http://localhost:8000/join?username=${generatedUsername}`
-        );
+        const generatedUsername = responseUsername.data.username;
+        console.log("generated username: ", generatedUsername);
+        const responseUser = await axios.post(`http://localhost:8000/join`, {
+          username: generatedUsername,
+        });
         setUser(responseUser.data);
       } catch (error) {
         console.error("Error setting up user:", error);
@@ -34,14 +34,15 @@ export const App = () => {
   // --- Polling for messages ---
   useEffect(() => {
     if (!user) return;
-    const intervalTime = 2000 + Math.random() * 3000;
+    const intervalTime = 2000 + Math.random() * 3000; // 2-5s
 
     const pollMessages = setInterval(async () => {
       try {
-        const res = await fetch(
+        const responseMessages = await axios.get(
           `http://localhost:8000/messages/new?user_id=${user.id}`
         );
-        const data = await res.json();
+        console.log("responseMessages.data: ", responseMessages.data)
+        const data = responseMessages.data; // an array
         if (data && Array.isArray(data)) {
           setMessages((prev) => [...prev, ...data]);
         }
@@ -55,15 +56,15 @@ export const App = () => {
   // --- Polling for active users ---
   useEffect(() => {
     if (!user) return;
-    const intervalTime = 5000 + Math.random() * 5000;
+    const intervalTime = 5000 + Math.random() * 5000; // 5-10s
 
     const pollActiveUsers = setInterval(async () => {
       try {
-        const res = await fetch(
+        const responseUsers = await axios.get(
           `http://localhost:8000/active-users?current_user_id=${user.id}`
         );
-        const data = await res.json();
-        setUsers(data);
+        console.log("responseUsers.data: ", responseUsers.data)
+        setUsers(responseUsers.data);
       } catch (err) {
         console.error("User polling error:", err);
       }
@@ -74,10 +75,11 @@ export const App = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
     try {
-      await fetch("http://localhost:8000/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: user.username, content: input }),
+      await axios.post("http://localhost:8000/send", {
+        content: input,
+        username: user.username,
+        type: "user_message",
+        user_id: user.id,
       });
       setInput("");
     } catch (err) {
