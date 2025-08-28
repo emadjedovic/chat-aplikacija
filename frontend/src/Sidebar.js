@@ -1,14 +1,11 @@
 import React from "react";
-import {
-  Container,
-  Row,
-  Col,
-  ListGroup,
-  Card,
-  Dropdown,
-} from "react-bootstrap";
+import { Container, Card, ListGroup, Dropdown } from "react-bootstrap";
 
-export const Sidebar = ({ users }) => {
+export const Sidebar = ({
+  users,
+  user,
+  onUserSelect, // function from App.js
+}) => {
   return (
     <Container className="px-0">
       {/* Potpuni ispis u sidebar-u za sm i veće ekrane */}
@@ -19,14 +16,20 @@ export const Sidebar = ({ users }) => {
         <Card.Body className="p-0">
           {users ? (
             <ListGroup className="overflow-auto" style={{ maxHeight: "70vh" }}>
-              {users.map((u) => (
-                <ListGroup.Item key={u.id}>
-                  <span>{u.username}</span>
-                  {u.joined_recently && (
-                    <span className="badge bg-success">novi</span>
-                  )}
-                </ListGroup.Item>
-              ))}
+              {users
+                .filter((u) => u.id !== user.id) // exclude self
+                .map((u) => (
+                  <ListGroup.Item
+                    key={u.id}
+                    action
+                    onClick={() => onUserSelect(u)}
+                  >
+                    {u.username}
+                    {u.joined_recently && (
+                      <span className="badge bg-success ms-2">novi</span>
+                    )}
+                  </ListGroup.Item>
+                ))}
             </ListGroup>
           ) : (
             <p className="m-3">Učitavanje korisnika...</p>
@@ -39,17 +42,18 @@ export const Sidebar = ({ users }) => {
         <Dropdown.Toggle variant="dark" id="dropdown-users">
           Aktivni korisnici
         </Dropdown.Toggle>
-
         <Dropdown.Menu style={{ maxHeight: "50vh", overflowY: "auto" }}>
-          {users ? (
-            users.map((u) => (
-              <Dropdown.Item key={u.id}>
-                {u.username}
-                {u.joined_recently && (
-                  <span className="badge bg-success ms-2">novi</span>
-                )}
-              </Dropdown.Item>
-            ))
+          {users && users.length ? (
+            users
+              .filter((u) => u.id !== user.id)
+              .map((u) => (
+                <Dropdown.Item key={u.id} onClick={() => onUserSelect(u)}>
+                  {u.username}
+                  {u.joined_recently && (
+                    <span className="badge bg-success ms-2">novi</span>
+                  )}
+                </Dropdown.Item>
+              ))
           ) : (
             <Dropdown.Item disabled>Učitavanje korisnika...</Dropdown.Item>
           )}

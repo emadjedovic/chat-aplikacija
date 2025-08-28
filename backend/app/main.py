@@ -4,7 +4,7 @@ from database import SessionLocal, engine, Base
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from schemas import *
-from models import User, Message, MessageType
+from models import User, Message, MessageType, Chat
 import random_username.generate as rug
 from dependencies import get_db
 from datetime import datetime, timezone, timedelta
@@ -13,6 +13,7 @@ from cache import *
 import heapq
 import time
 from threading import Thread
+from routers import private_chats
 
 
 # pokrece se prije aplikacije (setup) i nakon zatvaranja (ciscenje)
@@ -40,6 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(private_chats.router)
 
 @app.get("/generate-username")
 def generate_username():
