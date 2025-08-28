@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { MessageBubble } from "./MessageBubble";
 import { BsArrowDown } from "react-icons/bs";
@@ -16,6 +16,11 @@ export const GlobalChat = ({
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // --- Auto scroll whenever messages change ---
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]); // runs whenever messages array changes
 
   return (
     <Container fluid className="p-3">

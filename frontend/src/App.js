@@ -20,6 +20,7 @@ export const App = () => {
         const responseUsername = await axios.get(
           "http://localhost:8000/generate-username"
         );
+        console.log("response username: ", responseUsername);
         const generatedUsername = responseUsername.data.username;
         console.log("generated username: ", generatedUsername);
         const responseUser = await axios.post(`http://localhost:8000/join`, {
@@ -63,7 +64,7 @@ export const App = () => {
     const pollActiveUsers = setInterval(async () => {
       try {
         const responseUsers = await axios.get(
-          `http://localhost:8000/active-users-test?current_user_id=${user.id}`
+          `http://localhost:8000/active-users?current_user_id=${user.id}`
         );
         console.log("responseUsers.data: ", responseUsers.data)
         setUsers(responseUsers.data);

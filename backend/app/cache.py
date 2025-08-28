@@ -48,5 +48,10 @@ def add_message_to_cache(msg: Message):
 
 # userima dobavljamo samo poruke koje nisu stigli procitati
 # moramo pamtiti dokle je svaki user dosao u citanju poruke
-last_seen_by_users = {} # mapa user_id -> (index zadnje procitane poruke, zadnji timestamp aktivnosti usera)
-# periodicno cistiti za neaktivne usere
+last_seen_msg = {} # mapa user_id -> (index zadnje procitane poruke, zadnji timestamp aktivnosti usera)
+'''
+periodnicno cistiti neaktivne usere
+min-heap vrijednosti (expiry_time, user_id) radi efikasnosti 
+umjesto da idemo O(n) kroz usere, min-heap nam omogucava sve akcije u O(logn) vremenu
+skalabilno, nije potrebno pristupati bazi
+'''
