@@ -37,6 +37,8 @@
 }
 
 .current-user-message {
+  white-space: pre-wrap; /* respect newlines */
+  word-wrap: break-word; /* wrap long lines */
   margin-left: auto;
   max-width: 70%;
   padding: 10px 15px;
@@ -46,6 +48,8 @@
 }
 
 .other-user-message {
+  white-space: pre-wrap; /* respect newlines */
+  word-wrap: break-word; /* wrap long lines */
   margin-right: auto;
   max-width: 70%;
   padding: 10px 14px;

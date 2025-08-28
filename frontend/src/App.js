@@ -49,7 +49,6 @@ export const App = () => {
         const responseMessages = await axios.get(
           `http://localhost:8000/messages/new?user_id=${user.id}`
         );
-        console.log("responseMessages.data: ", responseMessages.data);
         const data = responseMessages.data; // an array
         if (data && Array.isArray(data)) {
           setMessages((prev) => [...prev, ...data]);
@@ -71,7 +70,6 @@ export const App = () => {
         const responseUsers = await axios.get(
           `http://localhost:8000/active-users?current_user_id=${user.id}`
         );
-        console.log("responseUsers.data: ", responseUsers.data);
         setUsers(responseUsers.data);
       } catch (err) {
         console.error("User polling error:", err);
@@ -87,10 +85,12 @@ export const App = () => {
         content: input,
         username: user.username,
         type: "user_message",
-        user_id: user.id
-      }
-      const response = await axios.post("http://localhost:8000/send", newMessage);
-      console.log("response data send message: ", response.data)
+        user_id: user.id,
+      };
+      const response = await axios.post(
+        "http://localhost:8000/send",
+        newMessage
+      );
       setMessages((prev) => [...prev, response.data]);
       setInput("");
     } catch (err) {
@@ -114,6 +114,7 @@ export const App = () => {
               input={input}
               setInput={setInput}
               sendMessage={sendMessage}
+              user={user}
             />
           </Col>
         </Row>

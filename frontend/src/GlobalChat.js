@@ -17,10 +17,17 @@ export const GlobalChat = ({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // --- Auto scroll whenever messages change ---
+  const lastMessageId = useRef(null);
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]); // runs whenever messages array changes
+    if (!messages.length) return;
+
+    const newestId = messages[messages.length - 1].id;
+    if (newestId > lastMessageId.current) {
+      scrollToBottom();
+      lastMessageId.current = newestId;
+    }
+  }, [messages]);
 
   return (
     <Container fluid className="p-3">
@@ -30,19 +37,21 @@ export const GlobalChat = ({
 
       {messages.length > 0 ? (
         <div className="chat-container">
-          {messages.map((m) => (
-            <MessageBubble
-              message={m}
-              isCurrentUser={user && m.user_id === user.id}
-            />
-          ))}
+          {messages.map((m) => {
+            return (
+              <MessageBubble
+                message={m}
+                isCurrentUser={user && m.user_id === user.id}
+              />
+            );
+          })}
           <div ref={chatEndRef} />
         </div>
       ) : (
         <p>Učitavanje poruka...</p>
       )}
 
-      <Row className="mt-3">
+      <Row className="mt-3 align-items-start">
         <Col xs={4} lg={2} className="d-grid px-1">
           <Button variant="light" onClick={scrollToBottom}>
             Idi na dno
@@ -53,7 +62,13 @@ export const GlobalChat = ({
             as="textarea" // imamo multi-line input
             rows={1} // default jedan red slobodan
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+
+              // auto-resize
+              e.target.style.height = "auto"; // reset height
+              e.target.style.height = e.target.scrollHeight + "px"; // set to scrollHeight
+            }}
             placeholder="Upiši poruku..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -65,7 +80,7 @@ export const GlobalChat = ({
           />
         </Col>
         <Col xs={2} lg={2} className="px-1 d-grid">
-          <Button variant="danger" onClick={sendMessage}>
+          <Button variant="dark" onClick={sendMessage}>
             Pošalji
           </Button>
         </Col>
