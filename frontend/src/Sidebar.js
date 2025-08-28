@@ -1,11 +1,7 @@
 import React from "react";
 import { Container, Card, ListGroup, Dropdown } from "react-bootstrap";
 
-export const Sidebar = ({
-  users,
-  user,
-  onUserSelect, // function from App.js
-}) => {
+export const Sidebar = ({ users, user, onUserSelect }) => {
   return (
     <Container className="px-0">
       {/* Potpuni ispis u sidebar-u za sm i veće ekrane */}
@@ -14,7 +10,7 @@ export const Sidebar = ({
           Aktivni korisnici
         </Card.Header>
         <Card.Body className="p-0">
-          {users ? (
+          {users.length > 0 ? (
             <ListGroup className="overflow-auto" style={{ maxHeight: "70vh" }}>
               {users
                 .filter((u) => u.id !== user.id) // exclude self
@@ -43,7 +39,7 @@ export const Sidebar = ({
           Aktivni korisnici
         </Dropdown.Toggle>
         <Dropdown.Menu style={{ maxHeight: "50vh", overflowY: "auto" }}>
-          {users && users.length ? (
+          {users.length > 0 ? (
             users
               .filter((u) => u.id !== user.id)
               .map((u) => (
