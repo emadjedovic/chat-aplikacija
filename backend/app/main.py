@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Depends
 from seed import generate_history_data
-from fastapi import FastAPI, Depends
 from database import SessionLocal, engine, Base
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -12,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from cache import *
 import heapq, time
-from threading import Thread, Lock
+from threading import Thread
 
 # pokrece se prije aplikacije (setup) i nakon zatvaranja (ciscenje)
 @asynccontextmanager
@@ -64,14 +63,14 @@ def join(usernameReq: UserIn, db: Session = Depends(get_db)):
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
     if user:
-        # update da je user jos uvijek online
-        user.last_online = datetime.now(timezone.utc)
+        # update da je user jos uvijek aktivan
+        user.last_active = datetime.now(timezone.utc)
         db.commit()
 
     # samo aktivni useri, odnosno aktivnost do 11s (jer polling radi svakih 5s-10s)
     active_users = db.query(User).filter(
-        User.last_online > (datetime.utcnow() - timedelta(seconds=11))
-    ).order_by(User.last_online.desc()).all()
+        User.last_active > (datetime.utcnow() - timedelta(seconds=11))
+    ).order_by(User.last_active.desc()).all()
 
     result = []
     for u in active_users:
@@ -205,9 +204,9 @@ def read_root(db: Session = Depends(get_db)):
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
     if user:
-        user.last_online = datetime.now(timezone.utc)
+        user.last_active = datetime.now(timezone.utc)
         db.commit()
-    active_users = db.query(User).order_by(User.last_online.desc()).all()
+    active_users = db.query(User).order_by(User.last_active.desc()).all()
 
     result = []
     for u in active_users:

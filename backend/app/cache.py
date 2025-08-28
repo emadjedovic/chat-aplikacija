@@ -1,10 +1,10 @@
 
 from collections import deque
 # djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
-from threading import Lock, Thread
-import time
+from threading import Lock
 from models import Message
 from schemas import MessageOut, MessageType
+from datetime import datetime
 
 '''
 The Lock is used to prevent concurrent access to shared data, and with is a construct that handles entering and exiting contexts, like acquiring and releasing the lock. "with" ensures that recources are cleaned up properly when the block ends, even if an exception occurs.
@@ -28,12 +28,15 @@ def serialize_message(msg: Message):
     }
 
 def deserialize(d):
+    created_at = d["created_at"]
+    if isinstance(created_at, str):
+        created_at = datetime.fromisoformat(created_at)
     return MessageOut(
         id=d["id"],
         content=d["content"],
         username=d["username"],
         type=d["type"],
-        created_at=d["created_at"],
+        created_at=created_at,
         user_id=d["user_id"] if d["type"] == MessageType.USER_MESSAGE else None
     )
 
@@ -43,7 +46,6 @@ def add_message_to_cache(msg: Message):
     serialized_msg = serialize_message(msg)
     with lock:
         message_cache.append(serialized_msg)
-        print("\nAdded to cache: ", serialized_msg)
 
 
 # userima dobavljamo samo poruke koje nisu stigli procitati
