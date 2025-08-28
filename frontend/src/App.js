@@ -1,11 +1,11 @@
 // App.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { Sidebar } from "./Sidebar";
 import { GlobalChat } from "./GlobalChat";
-import './index.css';
+import "./index.css";
 import "./globalChat.css";
 
 export const App = () => {
@@ -13,24 +13,29 @@ export const App = () => {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState("");
+  const hasJoined = useRef(false);
 
   useEffect(() => {
     async function generateUsernameAndJoin() {
+      if (hasJoined.current) return; // <-- prevents double run
+      hasJoined.current = true;
+
       try {
         const responseUsername = await axios.get(
           "http://localhost:8000/generate-username"
         );
-        console.log("response username: ", responseUsername);
         const generatedUsername = responseUsername.data.username;
-        console.log("generated username: ", generatedUsername);
-        const responseUser = await axios.post(`http://localhost:8000/join`, {
+
+        const responseUser = await axios.post("http://localhost:8000/join", {
           username: generatedUsername,
         });
+
         setUser(responseUser.data);
       } catch (error) {
         console.error("Error setting up user:", error);
       }
     }
+
     generateUsernameAndJoin();
   }, []);
 
@@ -44,7 +49,7 @@ export const App = () => {
         const responseMessages = await axios.get(
           `http://localhost:8000/messages/new?user_id=${user.id}`
         );
-        console.log("responseMessages.data: ", responseMessages.data)
+        console.log("responseMessages.data: ", responseMessages.data);
         const data = responseMessages.data; // an array
         if (data && Array.isArray(data)) {
           setMessages((prev) => [...prev, ...data]);
@@ -66,7 +71,7 @@ export const App = () => {
         const responseUsers = await axios.get(
           `http://localhost:8000/active-users?current_user_id=${user.id}`
         );
-        console.log("responseUsers.data: ", responseUsers.data)
+        console.log("responseUsers.data: ", responseUsers.data);
         setUsers(responseUsers.data);
       } catch (err) {
         console.error("User polling error:", err);
@@ -78,12 +83,15 @@ export const App = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
     try {
-      await axios.post("http://localhost:8000/send", {
+      const newMessage = {
         content: input,
         username: user.username,
         type: "user_message",
-        user_id: user.id,
-      });
+        user_id: user.id
+      }
+      const response = await axios.post("http://localhost:8000/send", newMessage);
+      console.log("response data send message: ", response.data)
+      setMessages((prev) => [...prev, response.data]);
       setInput("");
     } catch (err) {
       console.error("Send message error:", err);
@@ -95,6 +103,9 @@ export const App = () => {
       {user ? (
         <Row>
           <Col sm={4} md={4} xl={3} className="px-1">
+            <p>
+              <i>Username: {user.username}</i>
+            </p>
             <Sidebar users={users} />
           </Col>
           <Col sm={8} md={8} xl={9} className="px-1">

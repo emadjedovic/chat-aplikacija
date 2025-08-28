@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, status, Request
 from database import SessionLocal
 from sqlalchemy.orm import Session
 
+
 def get_db():
     db = SessionLocal()
     try:

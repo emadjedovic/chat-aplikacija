@@ -3,15 +3,19 @@ from pydantic import BaseModel
 from typing import List, Optional
 from enum import Enum
 
+
 class MessageType(str, Enum):
     SYSTEM = "system"
     USER_MESSAGE = "user_message"
 
+
 class UserBase(BaseModel):
     username: str
 
+
 class UserIn(UserBase):
     pass
+
 
 class UserOut(UserBase):
     id: int
@@ -20,14 +24,17 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+
 class MessageBase(BaseModel):
     content: str
     username: Optional[str] = None
     type: Optional[MessageType] = MessageType.USER_MESSAGE
-    user_id: Optional[int]=None
+    user_id: Optional[int] = None
+
 
 class MessageIn(MessageBase):
     pass
+
 
 class MessageOut(MessageBase):
     id: int

@@ -8,6 +8,7 @@ from cache import add_message_to_cache, message_cache
 
 fake = Faker()
 
+
 def generate_history_data(db: Session, n_users=50, n_messages=500):
 
     # ukoliko vec postoje podaci
@@ -23,10 +24,9 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
                 # last seen default trenutno
             )
         )
-        
+
     db.add_all(users)
     db.commit()
-
 
     # oduzimamo 30 dana od trenutnog vremena
     start_time = datetime.now(timezone.utc) - timedelta(days=30)
@@ -48,11 +48,11 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
 
         messages.append(
             Message(
-                content=fake.sentence(nb_words=random.randint(3,12)),
+                content=fake.sentence(nb_words=random.randint(3, 12)),
                 created_at=msg_time,
                 user_id=user.id,
                 username=username,
-                type=msg_type
+                type=msg_type,
             )
         )
 
