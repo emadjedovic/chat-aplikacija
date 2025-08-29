@@ -4,7 +4,7 @@ from models.message import Message, MessageType
 from models.user import User
 from schemas.message import MessageIn, MessageOut
 
-from cache_global import (
+from cache.cache_global import (
     message_cache,
     message_cache_lock,
     last_seen_msg,

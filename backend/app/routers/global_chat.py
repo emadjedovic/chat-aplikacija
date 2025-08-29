@@ -11,7 +11,7 @@ from crud.global_chat import (
     mark_user_active,
     list_active_users_window,
     poll_new_messages,
-    create_user_message,
+    send_user_message,
 )
 
 router = APIRouter()
@@ -33,7 +33,7 @@ def join(usernameReq: UserIn, db: Session = Depends(get_db)):
 @router.get("/active-users")
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     mark_user_active(db, current_user_id)
-    return list_active_users_window(db, seconds=11)
+    return list_active_users_window(db)
 
 
 @router.get("/messages/new", response_model=List[MessageOut])
@@ -43,7 +43,7 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
 
 @router.post("/send", response_model=MessageOut)
 def send_message(msg: MessageIn, db: Session = Depends(get_db)):
-    saved = create_user_message(db, msg)
+    saved = send_user_message(db, msg)
     if saved is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -1,5 +1,3 @@
-import React from "react";
-import "./globalChat.css";
 
 export const MessageBubble = ({ message, isCurrentUser }) => {
   if (message.type === "system") {

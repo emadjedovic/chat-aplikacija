@@ -9,7 +9,7 @@ from dependencies import get_db
 from datetime import datetime, timezone, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from routers import private_chats, notifications, global_chat
-from cache_global import add_message_to_cache
+from cache.cache_global import add_message_to_cache
 from schemas.message import MessageOut
 
 

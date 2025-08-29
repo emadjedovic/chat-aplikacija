@@ -5,7 +5,7 @@ from models.user import User
 from models.message import Message, MessageType
 from datetime import datetime, timedelta, timezone
 from random_username.generate import generate_username
-from cache_global import add_message_to_cache, message_cache
+from cache.cache_global import add_message_to_cache, message_cache
 
 fake = Faker()
 

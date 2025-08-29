@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
-import { Sidebar } from "./Sidebar";
-import { GlobalChat } from "./GlobalChat";
-import { PrivateChat } from "./PrivateChat";
-import "./index.css";
-import "./globalChat.css";
+import { Sidebar } from "./components/Sidebar";
+import { GlobalChat } from "./components/GlobalChat";
+import { PrivateChat } from "./components/PrivateChat";
+import "./css/index.css";
+import "./css/globalChat.css";
 
 export const App = () => {
   const [user, setUser] = useState(null);
