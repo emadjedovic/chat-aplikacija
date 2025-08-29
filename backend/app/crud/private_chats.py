@@ -1,28 +1,22 @@
-# backend/app/crud/private_chats.py
 from datetime import datetime, timezone
-from typing import List, Optional
-
 from sqlalchemy.orm import Session
-
 from models.chat import Chat
 from models.message import Message, MessageType
 from schemas.message import MessageIn
 
 
-# ---------- Chat ----------
-
-def get_chat_between(db: Session, user_a_id: int, user_b_id: int) -> Optional[Chat]:
+def get_chat_between(db: Session, user_a_id: int, user_b_id: int):
     return (
         db.query(Chat)
         .filter(
-            ((Chat.user1_id == user_a_id) & (Chat.user2_id == user_b_id)) |
-            ((Chat.user1_id == user_b_id) & (Chat.user2_id == user_a_id))
+            ((Chat.user1_id == user_a_id) & (Chat.user2_id == user_b_id))
+            | ((Chat.user1_id == user_b_id) & (Chat.user2_id == user_a_id))
         )
         .first()
     )
 
 
-def create_chat(db: Session, user1_id: int, user2_id: int) -> Chat:
+def create_chat(db: Session, user1_id: int, user2_id: int):
     chat = Chat(user1_id=user1_id, user2_id=user2_id)
     db.add(chat)
     db.commit()
@@ -30,14 +24,14 @@ def create_chat(db: Session, user1_id: int, user2_id: int) -> Chat:
     return chat
 
 
-def get_or_create_chat(db: Session, creator_id: int, other_user_id: int) -> Chat:
+def get_or_create_chat(db: Session, creator_id: int, other_user_id: int):
     chat = get_chat_between(db, creator_id, other_user_id)
     if chat is None:
         chat = create_chat(db, creator_id, other_user_id)
     return chat
 
 
-def get_chat_by_id(db: Session, chat_id: int) -> Optional[Chat]:
+def get_chat_by_id(db: Session, chat_id: int):
     return db.query(Chat).filter(Chat.id == chat_id).first()
 
 
@@ -47,9 +41,7 @@ def get_counterpart_user_id(chat: Chat, user_id: int) -> int:
     return chat.user1_id
 
 
-# ---------- Messages ----------
-
-def list_messages_for_chat(db: Session, chat_id: int) -> List[Message]:
+def list_messages_for_chat(db: Session, chat_id: int):
     return (
         db.query(Message)
         .filter(Message.chat_id == chat_id)
@@ -58,7 +50,7 @@ def list_messages_for_chat(db: Session, chat_id: int) -> List[Message]:
     )
 
 
-def create_message_in_chat(db: Session, chat_id: int, msg_in: MessageIn) -> Message:
+def create_message_in_chat(db: Session, chat_id: int, msg_in: MessageIn):
     msg = Message(
         content=msg_in.content,
         username=msg_in.username,

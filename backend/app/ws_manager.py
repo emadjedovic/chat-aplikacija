@@ -1,8 +1,8 @@
 from fastapi import WebSocket
 
+
 class ConnectionManager:
     def __init__(self):
-        # maps user_id -> WebSocket
         self.active_connections = {}
 
     async def connect(self, user_id: int, websocket: WebSocket):
@@ -22,5 +22,4 @@ class ConnectionManager:
             await self.send_personal_message(uid, message)
 
 
-# create a single shared instance
 manager = ConnectionManager()

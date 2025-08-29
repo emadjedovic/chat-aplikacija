@@ -1,6 +1,4 @@
-# backend/app/routers/private_chats.py
 from typing import List
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -10,13 +8,11 @@ from fastapi import (
     status,
 )
 from sqlalchemy.orm import Session
-
 from dependencies import get_db
 from database import SessionLocal
 from schemas.chat import ChatOut
 from schemas.message import MessageOut, MessageIn
 from ws_manager import manager
-
 from crud.private_chats import (
     get_or_create_chat as crud_get_or_create_chat,
     list_messages_for_chat,
@@ -24,8 +20,6 @@ from crud.private_chats import (
     get_chat_by_id,
     get_counterpart_user_id,
 )
-
-# keep your existing notifications import (names unchanged)
 from crud.notifications import (
     create_new_chat_notification,
     create_new_message_notification,
@@ -39,12 +33,6 @@ def get_or_create_chat(
     creator_id: int, other_user_id: int, db: Session = Depends(get_db)
 ):
     chat = crud_get_or_create_chat(db, creator_id, other_user_id)
-
-    # if it was newly created, notify the other participant
-    # A simple way: re-query to check “just created” is to compare current existence,
-    # but since crud_get_or_create_chat returns the chat either way, we can detect
-    # creation by seeing if there was none before:
-    # -> For simplicity, assume we always notify here (idempotent for client).
     recipient_id = get_counterpart_user_id(chat, creator_id)
     create_new_chat_notification(db, recipient_id=recipient_id, chat_id=chat.id)
 

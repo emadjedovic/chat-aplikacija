@@ -1,13 +1,9 @@
-from typing import List
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case
 from models.notification import Notification, NotificationType
 from models.chat import Chat
 
 
-def create_new_chat_notification(
-    db: Session, recipient_id: int, chat_id: int
-) -> Notification:
+def create_new_chat_notification(db: Session, recipient_id: int, chat_id: int):
     notif = Notification(
         recipient_id=recipient_id,
         chat_id=chat_id,
@@ -20,9 +16,7 @@ def create_new_chat_notification(
     return notif
 
 
-def create_new_message_notification(
-    db: Session, recipient_id: int, chat_id: int
-) -> Notification:
+def create_new_message_notification(db: Session, recipient_id: int, chat_id: int):
     notif = Notification(
         recipient_id=recipient_id,
         chat_id=chat_id,
@@ -35,7 +29,7 @@ def create_new_message_notification(
     return notif
 
 
-def list_notifications(db: Session, user_id: int) -> List[Notification]:
+def list_notifications(db: Session, user_id: int):
     query = (
         db.query(Notification)
         .filter(Notification.recipient_id == user_id, Notification.is_read == False)
@@ -44,7 +38,7 @@ def list_notifications(db: Session, user_id: int) -> List[Notification]:
     return query
 
 
-def mark_notifications_read(db: Session, user_id: int, chat_id: int) -> int:
+def mark_notifications_read(db: Session, user_id: int, chat_id: int):
     q = db.query(Notification).filter(
         Notification.recipient_id == user_id,
         Notification.chat_id == chat_id,

@@ -8,7 +8,7 @@ from schemas.message import MessageOut, MessageType
 MAX_PRIVATE_CHAT_CACHE = 1000
 
 
-def serialize_message(msg: Message) -> Dict:
+def serialize_message(msg: Message):
     result = {
         "id": msg.id,
         "content": msg.content,
@@ -22,7 +22,7 @@ def serialize_message(msg: Message) -> Dict:
     return result
 
 
-def deserialize(data: Dict) -> MessageOut:
+def deserialize(data: Dict):
     created_at = data["created_at"]
     if isinstance(created_at, str):
         created_at = datetime.fromisoformat(created_at)
@@ -52,13 +52,13 @@ last_seen_msg: Dict[Tuple[int, int], int] = {}
 last_seen_msg_lock = Lock()
 
 
-def _ensure_chat(chat_id: int) -> None:
+def _ensure_chat(chat_id: int):
     exists = chat_id in message_cache
     if not exists:
         message_cache[chat_id] = deque(maxlen=MAX_PRIVATE_CHAT_CACHE)
 
 
-def add_new_message_to_cache(msg: Message) -> None:
+def add_new_message_to_cache(msg: Message):
     if msg.chat_id is None:
         return
     serialized = serialize_message(msg)
@@ -67,7 +67,7 @@ def add_new_message_to_cache(msg: Message) -> None:
         message_cache[msg.chat_id].append(serialized)
 
 
-def get_new_messages(chat_id: int, after_id: int) -> List[MessageOut]:
+def get_new_messages(chat_id: int, after_id: int):
     with message_cache_lock:
         if chat_id not in message_cache:
             return []
@@ -78,13 +78,13 @@ def get_new_messages(chat_id: int, after_id: int) -> List[MessageOut]:
         return results
 
 
-def set_last_seen(user_id: int, chat_id: int, last_msg_id: int) -> None:
+def set_last_seen(user_id: int, chat_id: int, last_msg_id: int):
     key = (user_id, chat_id)
     with last_seen_msg_lock:
         last_seen_msg[key] = last_msg_id
 
 
-def get_last_seen(user_id: int, chat_id: int) -> int:
+def get_last_seen(user_id: int, chat_id: int):
     key = (user_id, chat_id)
     with last_seen_msg_lock:
         if key in last_seen_msg:
@@ -92,11 +92,11 @@ def get_last_seen(user_id: int, chat_id: int) -> int:
         return 0
 
 
-def get_unread_from_cache(user_id: int, chat_id: int) -> List[MessageOut]:
+def get_unread_from_cache(user_id: int, chat_id: int):
     after = get_last_seen(user_id, chat_id)
     return get_new_messages(chat_id, after)
 
 
-def get_unread_count(user_id: int, chat_id: int) -> int:
+def get_unread_count(user_id: int, chat_id: int):
     unread = get_unread_from_cache(user_id, chat_id)
     return len(unread)

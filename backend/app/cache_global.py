@@ -1,4 +1,5 @@
 from collections import deque
+
 # djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
 from threading import Lock, Thread
 from models.message import Message

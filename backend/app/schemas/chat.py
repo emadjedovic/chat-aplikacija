@@ -16,9 +16,9 @@ class ChatCreate(ChatBase):
 class ChatOut(ChatBase):
     id: int
     created_at: datetime
-    user1: Optional["UserOut"] = None
-    user2: Optional["UserOut"] = None
-    messages: List["MessageOut"] = []
+    user1: Optional[UserOut] = None
+    user2: Optional[UserOut] = None
+    messages: List[MessageOut] = []
 
     class Config:
         from_attributes = True

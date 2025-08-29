@@ -2,11 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import random_username.generate as rug
-
 from dependencies import get_db
 from schemas.message import MessageOut, MessageIn
 from schemas.user import UserOut, UserIn
-
 from crud.global_chat import (
     create_user,
     create_system_join_message,
@@ -35,13 +33,11 @@ def join(usernameReq: UserIn, db: Session = Depends(get_db)):
 @router.get("/active-users")
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     mark_user_active(db, current_user_id)
-    # `list_active_users_window` already returns a `list[dict]`
     return list_active_users_window(db, seconds=11)
 
 
 @router.get("/messages/new", response_model=List[MessageOut])
 def new_messages(user_id: int, db: Session = Depends(get_db)):
-    # directly returns `list[MessageOut]`
     return poll_new_messages(db, user_id)
 
 
