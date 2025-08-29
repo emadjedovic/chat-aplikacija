@@ -13,7 +13,7 @@ export const Sidebar = ({ users, user, onUserSelect }) => {
           {users.length > 0 ? (
             <ListGroup className="overflow-auto" style={{ maxHeight: "70vh" }}>
               {users
-                .filter((u) => u.id !== user.id) // exclude self
+                .filter((u) => u.id !== user.id) // ne vidimo sebe u listi aktivnih
                 .map((u) => (
                   <ListGroup.Item
                     key={u.id}

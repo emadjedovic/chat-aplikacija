@@ -7,34 +7,28 @@ from database import SessionLocal
 from models import Chat, Message, MessageType
 from schemas import ChatOut, ChatCreate, MessageOut, MessageIn
 from ws_manager import manager
+from crud.notifications import create_new_chat_notification, create_new_message_notification
 
 router = APIRouter(prefix="/chats", tags=["private chats"])
 
 
 @router.get("/get-or-create", response_model=ChatOut)
-def get_or_create_chat(user1_id: int, user2_id: int, db: Session = Depends(get_db)):
+def get_or_create_chat(creator_id: int, other_user_id: int, db: Session = Depends(get_db)):
     chat = (
         db.query(Chat)
         .filter(
-            ((Chat.user1_id == user1_id) & (Chat.user2_id == user2_id))
-            | ((Chat.user1_id == user2_id) & (Chat.user2_id == user1_id))
+            ((Chat.user1_id == creator_id) & (Chat.user2_id == other_user_id))
+            | ((Chat.user1_id == other_user_id) & (Chat.user2_id == creator_id))
         )
         .first()
     )
     if not chat:
-        chat = Chat(user1_id=user1_id, user2_id=user2_id)
+        chat = Chat(user1_id=creator_id, user2_id=other_user_id)
         db.add(chat)
         db.commit()
         db.refresh(chat)
-    return chat
-
-
-@router.post("", response_model=ChatOut)
-def create_chat(chat_in: ChatCreate, db: Session = Depends(get_db)):
-    chat = Chat(user1_id=chat_in.user1_id, user2_id=chat_in.user2_id)
-    db.add(chat)
-    db.commit()
-    db.refresh(chat)
+        recipient_id = chat.user2_id if chat.user1_id == creator_id else chat.user1_id
+        create_new_chat_notification(db, recipient_id=recipient_id, chat_id=chat.id)       
     return chat
 
 
@@ -62,6 +56,15 @@ def post_chat_message(chat_id: int, msg_in: MessageIn, db: Session = Depends(get
     db.add(msg)
     db.commit()
     db.refresh(msg)
+    chat = (
+        db.query(Chat)
+        .filter(
+            Chat.id == chat_id
+        )
+        .first()
+    )
+    recipient_id = chat.user2_id if chat.user1_id == msg_in.user_id else chat.user1_id
+    create_new_message_notification(db, recipient_id=recipient_id, chat_id=chat.id)
     return msg
 
 
@@ -78,7 +81,7 @@ async def private_chat_ws(websocket: WebSocket):
 
         while True:
             data = await websocket.receive_json()
-            if data["type"] == "private_message":
+            if data["type"] == "new_message":
                 msg = data["data"]
                 chat_id = msg["chat_id"]
 
@@ -92,7 +95,7 @@ async def private_chat_ws(websocket: WebSocket):
                         else chat.user1_id
                     )
                     await manager.send_personal_message(
-                        receiver_id, {"type": "private_message", "data": msg}
+                        receiver_id, {"type": "new_message", "data": msg}
                     )
                 db.close()
     except WebSocketDisconnect:

@@ -40,6 +40,7 @@ export const GlobalChat = ({
           {messages.map((m) => {
             return (
               <MessageBubble
+              key={m.id}
                 message={m}
                 isCurrentUser={user && m.user_id === user.id}
               />

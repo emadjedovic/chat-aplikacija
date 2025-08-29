@@ -10,10 +10,7 @@ from dependencies import get_db
 from datetime import datetime, timezone, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from cache import *
-import heapq
-import time
-from threading import Thread
-from routers import private_chats
+from routers import private_chats, notifications
 
 
 # pokrece se prije aplikacije (setup) i nakon zatvaranja (ciscenje)
@@ -42,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(private_chats.router)
+app.include_router(notifications.router)
 
 @app.get("/generate-username")
 def generate_username():
@@ -171,45 +169,6 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
         result_messages.append(msg_des)
 
     return result_messages
-
-
-# ovaj metod "ciscenja" nam osigurava da last_seen_msg ostane relativno mala struktura
-expiry_heap = []  # (expiry_time, user_id)
-expiry_lock = Lock()  # dijeljena struktura, pa nam treba lock
-
-
-# stavljamo expirty na 5 minuta (300s)
-# poziva se na svaku aktivnost usera
-def update_expiry_heap(user_id, last_active):
-    expiry = last_active + timedelta(seconds=300)
-    with expiry_lock:
-        heapq.heappush(expiry_heap, (expiry, user_id))
-
-
-# skeniramo sve usere svakih 15s
-# tehnicki user postaje neaktivan ukoliko ne se poll ne pozove unutar 10s,
-# ali sigurnosti radi ostavljamo razmak jos 5s
-def cleanup_inactive_users():
-    while True:
-        now = datetime.now(timezone.utc)
-        with expiry_lock:
-            if expiry_heap:
-                expiry, user_id = expiry_heap[0]
-
-        time.sleep(15)
-
-        now = datetime.now(timezone.utc)
-
-        with expiry_lock:
-            while expiry_heap:
-                next_expiry, user_id = expiry_heap[0]
-                if next_expiry > now:
-                    break  # korisnik jos uvijek validan
-                heapq.heappop(expiry_heap)
-                last_seen_msg.pop(user_id, None)
-
-
-Thread(target=cleanup_inactive_users, daemon=True).start()
 
 
 @app.post("/send", response_model=MessageOut)

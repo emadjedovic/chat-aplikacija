@@ -60,7 +60,7 @@ export const PrivateChat = ({
           <div ref={chatEndRef} />
         </div>
       ) : (
-        <p>Učitavanje poruka...</p>
+        <p>Nema poruka.</p>
       )}
 
       <Row className="mt-3 align-items-start">
