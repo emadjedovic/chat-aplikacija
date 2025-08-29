@@ -14,7 +14,6 @@ export const App = () => {
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState("");
 
-  const [privateChats, setPrivateChats] = useState([]); // metadata for 1-1 chats
   const [activePrivateChat, setActivePrivateChat] = useState(null);
   const [messageCache, setMessageCache] = useState({}); // messages per chatId
   const [privateWS, setPrivateWS] = useState(null); // WebSocket for private chats only
@@ -94,7 +93,7 @@ export const App = () => {
         user_id: user.id,
       };
       const response = await axios.post(
-        "http://localhost:8000/send",
+        "http://localhost:8000/send_message",
         newMessage
       );
       setMessages((prev) => [...prev, response.data]);
@@ -122,7 +121,7 @@ export const App = () => {
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
 
-      if (msg.type === "private_message") {
+      if (msg.type === "new_message") {
         const chatId = msg.data.chat_id;
 
         setMessageCache((prev) => ({
@@ -140,9 +139,8 @@ export const App = () => {
     openPrivateWS();
 
     try {
-      // fetch or create chat in one call
       const res = await axios.get("http://localhost:8000/chats/get-or-create", {
-        params: { user1_id: user.id, user2_id: otherUser.id },
+        params: { creator_id: user.id, other_user_id: otherUser.id },
       });
 
       const chat = res.data;
@@ -157,10 +155,6 @@ export const App = () => {
           [chat.id]: msgRes.data,
         }));
       }
-
-      setPrivateChats((prev) =>
-        prev.some((c) => c.id === chat.id) ? prev : [...prev, chat]
-      );
 
       setActivePrivateChat(chat);
     } catch (err) {
@@ -178,7 +172,7 @@ export const App = () => {
       content: text,
     };
 
-    privateWS.send(JSON.stringify({ type: "private_message", data: msg }));
+    privateWS.send(JSON.stringify({ type: "new_message", data: msg }));
 
     setMessageCache((prev) => ({
       ...prev,
@@ -205,7 +199,7 @@ export const App = () => {
                   className="mb-2"
                   onClick={() => setActivePrivateChat(null)}
                 >
-                  ⬅ Nazad na globalni chat
+                  Nazad na globalni chat
                 </Button>
                 <PrivateChat
                   activeChat={activePrivateChat}
@@ -226,7 +220,7 @@ export const App = () => {
           </Col>
         </Row>
       ) : (
-        <p>Generating username...</p>
+        <p>Generisanje korisničkog imena...</p>
       )}
     </Container>
   );

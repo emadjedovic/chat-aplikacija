@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { MessageBubble } from "./MessageBubble";
-import { BsArrowDown } from "react-icons/bs";
 
 export const GlobalChat = ({
   messages,

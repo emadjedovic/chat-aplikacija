@@ -41,7 +41,7 @@ def new_messages(user_id: int, db: Session = Depends(get_db)):
     return poll_new_messages(db, user_id)
 
 
-@router.post("/send", response_model=MessageOut)
+@router.post("/send_message", response_model=MessageOut)
 def send_message(msg: MessageIn, db: Session = Depends(get_db)):
     saved = send_user_message(db, msg)
     if saved is None:
