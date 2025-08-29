@@ -16,7 +16,7 @@ export const PrivateChat = ({
   const chatEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   const lastMessageId = useRef(null);

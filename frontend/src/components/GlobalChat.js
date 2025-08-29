@@ -13,7 +13,7 @@ export const GlobalChat = ({
 
   // scroll do dna kad se klikne dugme za isto
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   const lastMessageId = useRef(null);

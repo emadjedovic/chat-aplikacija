@@ -46,7 +46,7 @@ export const App = () => {
 
   // --- Polling for messages ---
   useEffect(() => {
-    if (!user) return;
+    if (!user || activePrivateChat) return;
     const intervalTime = 2000 + Math.random() * 3000; // 2-5s
 
     const pollMessages = setInterval(async () => {
@@ -63,11 +63,12 @@ export const App = () => {
       }
     }, intervalTime);
     return () => clearInterval(pollMessages);
-  }, [user]);
+  }, [user, activePrivateChat]);
 
   // --- Polling for active users ---
   useEffect(() => {
-    if (!user) return;
+
+    if (!user || activePrivateChat) return;
     const intervalTime = 5000 + Math.random() * 5000; // 5-10s
 
     const pollActiveUsers = setInterval(async () => {
@@ -81,7 +82,7 @@ export const App = () => {
       }
     }, intervalTime);
     return () => clearInterval(pollActiveUsers);
-  }, [user]);
+  }, [user, activePrivateChat]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -103,40 +104,34 @@ export const App = () => {
     }
   };
 
-  const openPrivateWS = () => {
-    if (privateWS) return; // already connected
+  useEffect(() => {
+    if (!user || !activePrivateChat) return;
 
-    // Connect to the new WS path
     const ws = new WebSocket("ws://localhost:8000/chats/ws");
 
     ws.onopen = () => {
       console.log("Private chat WebSocket connected");
-
-      // Send the initial connect message with user_id
       ws.send(JSON.stringify({ type: "connect", user_id: user.id }));
     };
 
-    ws.onclose = () => console.log("Private chat WebSocket disconnected");
+    ws.onclose = (event) => {
+      console.log("Private chat WebSocket disconnected", event);
+    };
 
     ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-
-      if (msg.type === "new_message") {
-        const chatId = msg.data.chat_id;
-
-        setMessageCache((prev) => ({
-          ...prev,
-          [chatId]: [...(prev[chatId] || []), msg.data],
-        }));
-      }
+      // ...your message handling...
     };
 
     setPrivateWS(ws);
-  };
+
+    return () => {
+      ws.close();
+      setPrivateWS(null);
+    };
+  }, [user, activePrivateChat]);
 
   const openPrivateChat = async (otherUser) => {
     if (!user) return;
-    openPrivateWS();
 
     try {
       const res = await axios.get("http://localhost:8000/chats/get-or-create", {
@@ -170,6 +165,8 @@ export const App = () => {
       chat_id: activePrivateChat.id,
       sender_id: user.id,
       content: text,
+      created_at: new Date().toISOString(),
+      type: "user_message",
     };
 
     privateWS.send(JSON.stringify({ type: "new_message", data: msg }));

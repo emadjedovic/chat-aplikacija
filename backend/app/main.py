@@ -50,7 +50,19 @@ def read_root(db: Session = Depends(get_db)):
     users_db = db.query(User).all()
     messages_db = db.query(Message).order_by(Message.created_at).all()
 
-    return {"users": users_db, "messages": messages_db}
+    return {
+        "users": [{"id": u.id, "username": u.username} for u in users_db],
+        "messages": [
+            {
+                "id": m.id,
+                "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "user_id": m.user_id,
+                "type": m.type.value if hasattr(m.type, "value") else str(m.type),
+            }
+            for m in messages_db
+        ],
+    }
 
 
 @app.get("/active-users-test", tags=["test"])
@@ -74,12 +86,7 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
             db.commit()
             add_message_to_cache(system_msg)
 
-        result.append(
-            {
-                "id": u.id,
-                "username": u.username
-            }
-        )
+        result.append({"id": u.id, "username": u.username})
 
     return result
 
