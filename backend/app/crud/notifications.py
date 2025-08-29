@@ -1,7 +1,8 @@
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
-from models import Notification, NotificationType, Chat
+from models.notification import Notification, NotificationType
+from models.chat import Chat
 
 
 def create_new_chat_notification(

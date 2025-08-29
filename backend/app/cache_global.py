@@ -1,8 +1,8 @@
 from collections import deque
 # djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
 from threading import Lock, Thread
-from models import Message
-from schemas import MessageOut, MessageType
+from models.message import Message
+from schemas.message import MessageOut, MessageType
 from datetime import datetime, timezone, timedelta
 import heapq
 import time

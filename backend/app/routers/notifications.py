@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List
 from dependencies import get_db
-from schemas import NotificationOut
+from schemas.notification import NotificationOut
 from crud.notifications import (
     list_notifications,
     mark_notifications_read,
