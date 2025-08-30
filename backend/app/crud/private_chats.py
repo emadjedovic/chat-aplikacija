@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models.chat import Chat
 from models.message import Message, MessageType
 from schemas.message import MessageIn
-
+from crud.notifications import create_new_message_notification
 
 def get_chat_between(db: Session, user_a_id: int, user_b_id: int):
     return (
@@ -63,3 +63,12 @@ def create_message_in_chat(db: Session, chat_id: int, msg_in: MessageIn):
     db.commit()
     db.refresh(msg)
     return msg
+
+def persist_message_and_notify(db: Session, chat_id: int, msg_in: MessageIn):
+    chat = get_chat_by_id(db, chat_id)
+    if chat is None:
+        return None, None, None
+    msg = create_message_in_chat(db, chat_id, msg_in)
+    recipient_id = get_counterpart_user_id(chat, msg_in.user_id)
+    create_new_message_notification(db, recipient_id=recipient_id, chat_id=chat.id)
+    return msg, recipient_id, chat

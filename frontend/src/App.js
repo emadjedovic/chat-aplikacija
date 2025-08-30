@@ -17,6 +17,8 @@ export const App = () => {
   const [activePrivateChat, setActivePrivateChat] = useState(null);
   const [messageCache, setMessageCache] = useState({}); // messages per chatId
   const [privateWS, setPrivateWS] = useState(null); // WebSocket for private chats only
+  // ... inside App component
+  const [unreadFlags, setUnreadFlags] = useState({}); // { otherUserId: true }
 
   const hasJoined = useRef(false);
 
@@ -67,8 +69,7 @@ export const App = () => {
 
   // --- Polling for active users ---
   useEffect(() => {
-
-    if (!user || activePrivateChat) return;
+    if (!user) return;
     const intervalTime = 5000 + Math.random() * 5000; // 5-10s
 
     const pollActiveUsers = setInterval(async () => {
@@ -104,52 +105,87 @@ export const App = () => {
     }
   };
 
+  // hydrate unread flags once after user is known
   useEffect(() => {
-    if (!user || !activePrivateChat) return;
+    if (!user) return;
+    axios
+      .get(
+        `http://localhost:8000/notifications/unread-flags?current_user_id=${user.id}`
+      )
+      .then((res) => setUnreadFlags(res.data || {}))
+      .catch((err) => console.error("Unread flags hydrate error:", err));
+  }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
     const ws = new WebSocket("ws://localhost:8000/chats/ws");
 
     ws.onopen = () => {
-      console.log("Private chat WebSocket connected");
       ws.send(JSON.stringify({ type: "connect", user_id: user.id }));
     };
 
-    ws.onclose = (event) => {
-      console.log("Private chat WebSocket disconnected", event);
-    };
-
     ws.onmessage = (event) => {
-      // ...your message handling...
+      const msg = JSON.parse(event.data);
+
+      if (msg.type === "new_message") {
+        const m = msg.data; // includes sender_id, chat_id, content...
+        // append to cache
+        setMessageCache((prev) => ({
+          ...prev,
+          [m.chat_id]: [...(prev[m.chat_id] || []), m],
+        }));
+        // if this chat is NOT currently open, flag as unread for the sender
+        if (!activePrivateChat || activePrivateChat.id !== m.chat_id) {
+          setUnreadFlags((prev) => ({ ...prev, [m.sender_id]: true }));
+        }
+        return;
+      }
+
+      if (msg.type === "notification") {
+        const { notification_type, chat_id, sender_id, other_user_id } =
+          msg.data;
+        // For new_message we may have already set via 'new_message' above,
+        // but handling again is harmless. For new_chat we rely on this.
+        const who = sender_id ?? other_user_id; // whichever the server sent
+        if (who && (!activePrivateChat || activePrivateChat.id !== chat_id)) {
+          setUnreadFlags((prev) => ({ ...prev, [who]: true }));
+        }
+        return;
+      }
     };
 
+    ws.onclose = () => {};
     setPrivateWS(ws);
-
     return () => {
       ws.close();
       setPrivateWS(null);
     };
-  }, [user, activePrivateChat]);
+  }, [user, activePrivateChat?.id]); // track id to correctly avoid flagging active room
 
   const openPrivateChat = async (otherUser) => {
     if (!user) return;
-
     try {
       const res = await axios.get("http://localhost:8000/chats/get-or-create", {
         params: { creator_id: user.id, other_user_id: otherUser.id },
       });
-
       const chat = res.data;
 
-      // fetch messages if not cached
       if (chat?.id && !messageCache[chat.id]) {
         const msgRes = await axios.get(
           `http://localhost:8000/chats/${chat.id}/messages`
         );
-        setMessageCache((prev) => ({
-          ...prev,
-          [chat.id]: msgRes.data,
-        }));
+        setMessageCache((prev) => ({ ...prev, [chat.id]: msgRes.data }));
       }
+
+      // Clear notifications for this chat (server + local)
+      await axios.post("http://localhost:8000/notifications/mark-read", null, {
+        params: { user_id: user.id, chat_id: chat.id },
+      });
+      setUnreadFlags((prev) => {
+        const next = { ...prev };
+        delete next[otherUser.id];
+        return next;
+      });
 
       setActivePrivateChat(chat);
     } catch (err) {
@@ -185,7 +221,12 @@ export const App = () => {
             <p>
               <i>Username: {user.username}</i>
             </p>
-            <Sidebar users={users} user={user} onUserSelect={openPrivateChat} />
+            <Sidebar
+              users={users}
+              user={user}
+              unreadFlags={unreadFlags}
+              onUserSelect={openPrivateChat}
+            />
           </Col>
           <Col sm={8} md={8} xl={9} className="px-1">
             {activePrivateChat ? (

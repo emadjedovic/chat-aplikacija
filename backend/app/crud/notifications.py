@@ -28,16 +28,6 @@ def create_new_message_notification(db: Session, recipient_id: int, chat_id: int
     db.refresh(notif)
     return notif
 
-
-def list_notifications(db: Session, user_id: int):
-    query = (
-        db.query(Notification)
-        .filter(Notification.recipient_id == user_id, Notification.is_read == False)
-        .all()
-    )
-    return query
-
-
 def mark_notifications_read(db: Session, user_id: int, chat_id: int):
     q = db.query(Notification).filter(
         Notification.recipient_id == user_id,

@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Card, ListGroup, Dropdown } from "react-bootstrap";
 
-export const Sidebar = ({ users, user, onUserSelect }) => {
+export const Sidebar = ({ users, user, unreadFlags, onUserSelect }) => {
   return (
     <Container className="px-0">
       {/* Potpuni ispis u sidebar-u za sm i veće ekrane */}
@@ -23,6 +23,9 @@ export const Sidebar = ({ users, user, onUserSelect }) => {
                     {u.username}
                     {u.joined_recently && (
                       <span className="badge bg-success ms-2">novi</span>
+                    )}
+                    {unreadFlags[u.id] && (
+                      <span className="badge-dot"></span>
                     )}
                   </ListGroup.Item>
                 ))}

@@ -13,3 +13,12 @@ code {
   font-family: Consolas, 'Courier New',
     monospace;
 }
+
+.badge-dot {
+  display: inline-block;
+  margin-left: 8px;
+  width: 8px;
+  height: 8px;
+  background-color: #dc3545; /* Bootstrap "danger" red */
+  border-radius: 50%;
+}

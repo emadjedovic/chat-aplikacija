@@ -4,20 +4,11 @@ from typing import List
 from dependencies import get_db
 from schemas.notification import NotificationOut
 from crud.notifications import (
-    list_notifications,
     mark_notifications_read,
     unread_flags,
 )
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
-
-
-@router.get("/", response_model=List[NotificationOut])
-def get_notifications(
-    user_id: int,
-    db: Session = Depends(get_db),
-):
-    return list_notifications(db, user_id=user_id)
 
 """
 npr. return {
