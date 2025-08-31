@@ -1,28 +1,12 @@
 from datetime import datetime
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 from enum import Enum
 
 
 class MessageType(str, Enum):
     SYSTEM = "system"
     USER_MESSAGE = "user_message"
-
-
-class UserBase(BaseModel):
-    username: str
-
-
-class UserIn(UserBase):
-    pass
-
-
-class UserOut(UserBase):
-    id: int
-    last_active: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MessageBase(BaseModel):

@@ -5,23 +5,13 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Boolean,
     Enum as SQLAlchemyEnum,
 )
 from enum import Enum
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime, timezone
 from database import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username = Column(String, unique=True, index=True)
-    last_active = Column(DateTime, default=datetime.now(timezone.utc))
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
-
-    messages = relationship("Message", back_populates="user")
-
 
 class MessageType(str, Enum):
     SYSTEM = "system"
@@ -44,4 +34,7 @@ class Message(Base):
         SQLAlchemyEnum(MessageType), default=MessageType.USER_MESSAGE, nullable=False
     )
 
+    chat_id = Column(Integer, ForeignKey("chats.id", ondelete="CASCADE"), nullable=True)
+    
     user = relationship("User", back_populates="messages")
+    chat = relationship("Chat", back_populates="messages")

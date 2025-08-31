@@ -1,10 +1,11 @@
 from faker import Faker
 import random
 from sqlalchemy.orm import Session
-from models import User, Message, MessageType
+from models.user import User
+from models.message import Message, MessageType
 from datetime import datetime, timedelta, timezone
 from random_username.generate import generate_username
-from cache import add_message_to_cache, message_cache
+from cache.cache_global import add_message_to_cache, message_cache
 
 fake = Faker()
 
