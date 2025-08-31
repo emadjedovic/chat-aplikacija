@@ -18,7 +18,7 @@ from crud.private_chats import (
     list_messages_for_chat,
     create_message_in_chat,
     get_chat_by_id,
-    get_counterpart_user_id,
+    get_other_user_id,
     persist_message_and_notify
 )
 from crud.notifications import (
@@ -34,7 +34,7 @@ async def get_or_create_chat(
     creator_id: int, other_user_id: int, db: Session = Depends(get_db)
 ):
     chat = crud_get_or_create_chat(db, creator_id, other_user_id)
-    recipient_id = get_counterpart_user_id(chat, creator_id)
+    recipient_id = get_other_user_id(chat, creator_id)
 
     # persist notification (so offline user gets it later)
     create_new_chat_notification(db, recipient_id=recipient_id, chat_id=chat.id)

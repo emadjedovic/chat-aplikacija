@@ -68,5 +68,5 @@ def generate_history_data(db: Session, n_users=50, n_messages=500):
     for msg in sorted(messages, key=lambda m: m.id):
         add_message_to_cache(msg)
 
-    print("cache size: ", len(message_cache))
+    print("Cache velicina: ", len(message_cache))
     print(f"Ubaceno {n_users} usera i {n_messages} poruka...\n")

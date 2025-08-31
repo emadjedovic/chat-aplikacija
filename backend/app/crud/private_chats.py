@@ -35,7 +35,7 @@ def get_chat_by_id(db: Session, chat_id: int):
     return db.query(Chat).filter(Chat.id == chat_id).first()
 
 
-def get_counterpart_user_id(chat: Chat, user_id: int) -> int:
+def get_other_user_id(chat: Chat, user_id: int) -> int:
     if chat.user1_id == user_id:
         return chat.user2_id
     return chat.user1_id
@@ -69,6 +69,6 @@ def persist_message_and_notify(db: Session, chat_id: int, msg_in: MessageIn):
     if chat is None:
         return None, None, None
     msg = create_message_in_chat(db, chat_id, msg_in)
-    recipient_id = get_counterpart_user_id(chat, msg_in.user_id)
+    recipient_id = get_other_user_id(chat, msg_in.user_id)
     create_new_message_notification(db, recipient_id=recipient_id, chat_id=chat.id)
     return msg, recipient_id, chat

@@ -1,12 +1,12 @@
-from collections import deque
-
-# djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
+from collections import (
+    deque,
+)  # djeluje kao rolling buffer, automatski se rjesava najstarijih poruka kada dosegne limit
 from threading import Lock, Thread
 from models.message import Message
-from schemas.message import MessageOut, MessageType
 from datetime import datetime, timezone, timedelta
 import heapq
 import time
+from helper import serialize_message
 
 """
 The Lock is used to prevent concurrent access to shared data, and with is a construct that handles entering and exiting contexts, like acquiring and releasing the lock. "with" ensures that recources are cleaned up properly when the block ends, even if an exception occurs.
@@ -15,35 +15,10 @@ If one thread is inside a "with lock: block", other threads trying to acquire th
 """
 
 MAX_CACHE_SIZE = 1000  # max broj poruka koje cuvamo u memoriji
-# za dovoljno velik cache najveci broj poll poziva nece zahtjevati upit nad bazom
-message_cache = deque(maxlen=MAX_CACHE_SIZE)
+message_cache = deque(
+    maxlen=MAX_CACHE_SIZE
+)  # najstarije automatski se automatski brisu
 message_cache_lock = Lock()
-
-
-def serialize_message(msg: Message):
-    return {
-        "id": msg.id,
-        "content": msg.content,
-        "username": msg.username,
-        "type": msg.type.value,
-        "created_at": msg.created_at.isoformat(),
-        "user_id": msg.user_id if msg.type == MessageType.USER_MESSAGE else None,
-    }
-
-
-def deserialize(d):
-    created_at = d["created_at"]
-    if isinstance(created_at, str):
-        created_at = datetime.fromisoformat(created_at)
-    return MessageOut(
-        id=d["id"],
-        content=d["content"],
-        username=d["username"],
-        type=d["type"],
-        created_at=created_at,
-        user_id=d["user_id"] if d["type"] == MessageType.USER_MESSAGE else None,
-    )
-
 
 # svaku novu poruku odmah dodajemo u cache
 def add_message_to_cache(msg: Message):
@@ -84,22 +59,16 @@ def update_expiry_heap(user_id, last_active):
 # ali sigurnosti radi ostavljamo razmak jos 5s
 def cleanup_inactive_users():
     while True:
-        now = datetime.now(timezone.utc)
-        with expiry_lock:
-            if expiry_heap:
-                expiry, user_id = expiry_heap[0]
-
         time.sleep(15)
-
         now = datetime.now(timezone.utc)
-
         with expiry_lock:
             while expiry_heap:
                 next_expiry, user_id = expiry_heap[0]
                 if next_expiry > now:
-                    break  # korisnik jos uvijek validan
+                    break  # korisnik jos uvijek aktivan
                 heapq.heappop(expiry_heap)
                 last_seen_msg.pop(user_id, None)
 
 
+# pokrecemo nit u pozadini
 Thread(target=cleanup_inactive_users, daemon=True).start()

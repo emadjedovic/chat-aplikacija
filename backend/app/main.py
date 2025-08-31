@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Depends
 from seed import generate_history_data
-from database import SessionLocal, engine, Base
+from database import SessionLocal, engine, Base, get_db
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from models.user import User
 from models.message import Message, MessageType
-from dependencies import get_db
 from datetime import datetime, timezone, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 from routers import private_chats, notifications, global_chat
@@ -24,7 +23,6 @@ async def lifespan(app: FastAPI):
 
     yield  # app se ovdje pokrece
 
-    # potencijalno zatvoriti konekcije sve
     pass
 
 
@@ -78,7 +76,7 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
         ten_seconds_before = datetime.utcnow() - timedelta(seconds=20)
         if u.created_at > ten_seconds_before:
             system_msg = Message(
-                content=f"{u.username} joined the chat!",
+                content=f"{u.username} se pridruzio chatu!",
                 type=MessageType.SYSTEM,
                 created_at=datetime.now(timezone.utc),
             )
