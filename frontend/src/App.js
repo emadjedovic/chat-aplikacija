@@ -15,16 +15,14 @@ export const App = () => {
   const [input, setInput] = useState("");
 
   const [activePrivateChat, setActivePrivateChat] = useState(null);
-  const [messageCache, setMessageCache] = useState({}); // messages per chatId
-  const [privateWS, setPrivateWS] = useState(null); // WebSocket for private chats only
-  // ... inside App component
-  const [unreadFlags, setUnreadFlags] = useState({}); // { otherUserId: true }
-
+  const [messageCache, setMessageCache] = useState({}); // mapa chat_id -> poruke
+  const [privateWS, setPrivateWS] = useState(null);
+  const [unreadBadges, setUnreadBadges] = useState({}); // { other_user_id: true } znaci ima neprocitanih poruka
   const hasJoined = useRef(false);
 
   useEffect(() => {
     async function generateUsernameAndJoin() {
-      if (hasJoined.current) return; // <-- prevents double run
+      if (hasJoined.current) return; // <-- sprjecava duplikaciju
       hasJoined.current = true;
 
       try {
@@ -46,17 +44,17 @@ export const App = () => {
     generateUsernameAndJoin();
   }, []);
 
-  // --- Polling for messages ---
+  // --- polling za globalne poruke ---
   useEffect(() => {
-    if (!user || activePrivateChat) return;
+    if (!user || activePrivateChat) return; // ne radimo polling za globalni chat ukoliko je user otvorio neki privatni chat
     const intervalTime = 2000 + Math.random() * 3000; // 2-5s
 
     const pollMessages = setInterval(async () => {
       try {
         const responseMessages = await axios.get(
-          `http://localhost:8000/messages/new?user_id=${user.id}`
+          `http://localhost:8000/messages/unread?user_id=${user.id}`
         );
-        const data = responseMessages.data; // an array
+        const data = responseMessages.data; // niz
         if (data && Array.isArray(data)) {
           setMessages((prev) => [...prev, ...data]);
         }
@@ -67,7 +65,7 @@ export const App = () => {
     return () => clearInterval(pollMessages);
   }, [user, activePrivateChat]);
 
-  // --- Polling for active users ---
+  // --- polling za aktivne korisnike ---
   useEffect(() => {
     if (!user) return;
     const intervalTime = 5000 + Math.random() * 5000; // 5-10s
@@ -75,7 +73,7 @@ export const App = () => {
     const pollActiveUsers = setInterval(async () => {
       try {
         const responseUsers = await axios.get(
-          `http://localhost:8000/active-users?current_user_id=${user.id}`
+          `http://localhost:8000/users/active?current_user_id=${user.id}`
         );
         setUsers(responseUsers.data);
       } catch (err) {
@@ -95,7 +93,7 @@ export const App = () => {
         user_id: user.id,
       };
       const response = await axios.post(
-        "http://localhost:8000/send_message",
+        "http://localhost:8000/messages",
         newMessage
       );
       setMessages((prev) => [...prev, response.data]);
@@ -105,15 +103,21 @@ export const App = () => {
     }
   };
 
-  // hydrate unread flags once after user is known
+  // skenira notifikacije kako bi postavili badgeve
   useEffect(() => {
     if (!user) return;
-    axios
-      .get(
-        `http://localhost:8000/notifications/unread-flags?current_user_id=${user.id}`
-      )
-      .then((res) => setUnreadFlags(res.data || {}))
-      .catch((err) => console.error("Unread flags hydrate error:", err));
+    const fetchUnreadBadges = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8000/notifications/unread?current_user_id=${user.id}`
+        );
+        setUnreadBadges(res.data || {});
+      } catch (err) {
+        console.error("Unread badges error:", err);
+      }
+    };
+
+    fetchUnreadBadges();
   }, [user]);
 
   useEffect(() => {
@@ -128,27 +132,26 @@ export const App = () => {
       const msg = JSON.parse(event.data);
 
       if (msg.type === "new_message") {
-        const m = msg.data; // includes sender_id, chat_id, content...
-        // append to cache
+        const m = msg.data;
+        // dodati u cache pod m.chat_id
         setMessageCache((prev) => ({
           ...prev,
           [m.chat_id]: [...(prev[m.chat_id] || []), m],
         }));
-        // if this chat is NOT currently open, flag as unread for the sender
+        // ako je otvoren globalni chat ili trenutni privatni chat nije onaj u koji je stigla nova poruka
         if (!activePrivateChat || activePrivateChat.id !== m.chat_id) {
-          setUnreadFlags((prev) => ({ ...prev, [m.sender_id]: true }));
+          setUnreadBadges((prev) => ({ ...prev, [m.sender_id]: true }));
         }
         return;
       }
 
+      // obrada notifikacija u real-time
       if (msg.type === "notification") {
         const { notification_type, chat_id, sender_id, other_user_id } =
           msg.data;
-        // For new_message we may have already set via 'new_message' above,
-        // but handling again is harmless. For new_chat we rely on this.
-        const who = sender_id ?? other_user_id; // whichever the server sent
+        const who = sender_id ?? other_user_id;
         if (who && (!activePrivateChat || activePrivateChat.id !== chat_id)) {
-          setUnreadFlags((prev) => ({ ...prev, [who]: true }));
+          setUnreadBadges((prev) => ({ ...prev, [who]: true }));
         }
         return;
       }
@@ -160,28 +163,33 @@ export const App = () => {
       ws.close();
       setPrivateWS(null);
     };
-  }, [user, activePrivateChat?.id]); // track id to correctly avoid flagging active room
+  }, [user, activePrivateChat?.id]);
 
   const openPrivateChat = async (otherUser) => {
     if (!user) return;
     try {
-      const res = await axios.get("http://localhost:8000/chats/get-or-create", {
-        params: { creator_id: user.id, other_user_id: otherUser.id },
+      // dohvatiti ili kreirati chat (create or get metoda)
+      const res = await axios.post("http://localhost:8000/chats", {
+        user1_id: user.id,
+        user2_id: otherUser.id,
       });
+
       const chat = res.data;
 
       if (chat?.id && !messageCache[chat.id]) {
+        // dohvatiti poruke iz baze ukoliko chat nije evidentiran u cacheu
         const msgRes = await axios.get(
           `http://localhost:8000/chats/${chat.id}/messages`
         );
         setMessageCache((prev) => ({ ...prev, [chat.id]: msgRes.data }));
       }
 
-      // Clear notifications for this chat (server + local)
-      await axios.post("http://localhost:8000/notifications/mark-read", null, {
-        params: { user_id: user.id, chat_id: chat.id },
+      // oznaciti notifikacije kao procitane
+      await axios.patch(`http://localhost:8000/notifications/${chat.id}/read`, {
+        user_id: user.id,
       });
-      setUnreadFlags((prev) => {
+
+      setUnreadBadges((prev) => {
         const next = { ...prev };
         delete next[otherUser.id];
         return next;
@@ -193,7 +201,6 @@ export const App = () => {
     }
   };
 
-  // --- Send private message ---
   const sendPrivateMessage = (text) => {
     if (!text.trim() || !activePrivateChat || !privateWS) return;
 
@@ -219,12 +226,12 @@ export const App = () => {
         <Row>
           <Col sm={4} md={4} xl={3} className="px-1">
             <p>
-              <i>Username: {user.username}</i>
+              <i>Korisničko ime: {user.username}</i>
             </p>
             <Sidebar
               users={users}
               user={user}
-              unreadFlags={unreadFlags}
+              unreadBadges={unreadBadges}
               onUserSelect={openPrivateChat}
             />
           </Col>
@@ -232,9 +239,8 @@ export const App = () => {
             {activePrivateChat ? (
               <>
                 <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mb-2"
+                  variant="outline-dark"
+                  className="my-2 mx-0"
                   onClick={() => setActivePrivateChat(null)}
                 >
                   Nazad na globalni chat

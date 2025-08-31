@@ -8,21 +8,20 @@ from cache.cache_global import (
     message_cache,
     message_cache_lock,
     last_seen_msg,
-    serialize_message,
-    deserialize,
     add_message_to_cache,
 )
+from helper import serialize_message, deserialize_message
 
 
 def get_current_time():
     return datetime.now(timezone.utc)
 
 
+# konverzija naive -> UTC aware
 def ensure_datetime(dt):
     if isinstance(dt, str):
         dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        # konverzija naive -> UTC aware
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
 
@@ -37,7 +36,7 @@ def create_user(db: Session, username: str) -> User:
 
 def create_system_join_message(db: Session, username: str):
     system_msg = Message(
-        content=f"{username} joined the chat!",
+        content=f"{username} se pridružio chatu!",
         type=MessageType.SYSTEM,
         created_at=get_current_time(),
     )
@@ -56,7 +55,7 @@ def mark_user_active(db: Session, user_id: int):
 
 
 # samo aktivni useri, odnosno aktivnost do 11s (jer polling radi svakih 5s-10s)
-def list_active_users_window(db: Session):
+def list_active_users(db: Session):
     active_users = (
         db.query(User)
         .filter(User.last_active > (datetime.utcnow() - timedelta(seconds=11)))
@@ -70,8 +69,8 @@ def list_active_users_window(db: Session):
     return result
 
 
+# cita iz globalnog cachea
 def poll_new_messages(db: Session, user_id: int):
-
     with message_cache_lock:
         # ukoliko user nije u ovoj mapi, znaci da nije vidio nista poruka do sad
         # (dobavljanje se vrsi od pocetka - indeksa 0)
@@ -119,7 +118,7 @@ def poll_new_messages(db: Session, user_id: int):
 
     result: list[MessageOut] = []
     for m in new_serialized:
-        msg_des = deserialize(m)
+        msg_des = deserialize_message(m)
         result.append(msg_des)
 
     return result

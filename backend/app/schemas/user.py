@@ -15,4 +15,4 @@ class UserOut(UserBase):
     last_active: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True

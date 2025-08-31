@@ -21,4 +21,4 @@ class ChatOut(ChatBase):
     messages: List[MessageOut] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True

@@ -3,10 +3,11 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self):
+        # user_id -> ws objekat
         self.active_connections = {}
 
     async def connect(self, user_id: int, websocket: WebSocket):
-        #await websocket.accept()
+        # await websocket.accept()
         self.active_connections[user_id] = websocket
 
     def disconnect(self, user_id: int):

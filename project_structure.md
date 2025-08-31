@@ -2,6 +2,11 @@
 └── 📁chat-aplikacija
     └── 📁backend
         └── 📁app
+            └── 📁cache
+                └── 📁__pycache__
+                    ├── cache_global.cpython-313.pyc
+                ├── cache_global.py
+                ├── cache_private.py
             └── 📁crud
                 └── 📁__pycache__
                     ├── __init__.cpython-313.pyc
@@ -47,9 +52,6 @@
                 ├── notification.py
                 ├── user.py
             ├── __init__.py
-            ├── cache_global.py
-            ├── cache_private.py
-            ├── chat.db
             ├── database.py
             ├── dependencies.py
             ├── main.py
@@ -65,15 +67,17 @@
             ├── palette.txt
             ├── scroll-down-png.png
         └── 📁src
+            └── 📁components
+                ├── GlobalChat.js
+                ├── MessageBubble.js
+                ├── PrivateChat.js
+                ├── Sidebar.js
+            └── 📁css
+                ├── globalChat.css
+                ├── index.css
             ├── App.js
             ├── chat-svg.svg
-            ├── globalChat.css
-            ├── GlobalChat.js
-            ├── index.css
             ├── index.js
-            ├── MessageBubble.js
-            ├── PrivateChat.js
-            ├── Sidebar.js
         ├── .gitignore
         ├── Dockerfile
         ├── package-lock.json
