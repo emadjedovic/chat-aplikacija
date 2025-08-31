@@ -76,7 +76,7 @@ def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
         ten_seconds_before = datetime.utcnow() - timedelta(seconds=20)
         if u.created_at > ten_seconds_before:
             system_msg = Message(
-                content=f"{u.username} se pridruzio chatu!",
+                content=f"{u.username} se pridružio chatu!",
                 type=MessageType.SYSTEM,
                 created_at=datetime.now(timezone.utc),
             )

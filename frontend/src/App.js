@@ -133,6 +133,7 @@ export const App = () => {
 
       if (msg.type === "new_message") {
         const m = msg.data;
+        // dodati u cache pod m.chat_id
         setMessageCache((prev) => ({
           ...prev,
           [m.chat_id]: [...(prev[m.chat_id] || []), m],
@@ -144,6 +145,7 @@ export const App = () => {
         return;
       }
 
+      // obrada notifikacija u real-time
       if (msg.type === "notification") {
         const { notification_type, chat_id, sender_id, other_user_id } =
           msg.data;
@@ -166,6 +168,7 @@ export const App = () => {
   const openPrivateChat = async (otherUser) => {
     if (!user) return;
     try {
+      // dohvatiti ili kreirati chat (create or get metoda)
       const res = await axios.post("http://localhost:8000/chats", {
         user1_id: user.id,
         user2_id: otherUser.id,
@@ -174,6 +177,7 @@ export const App = () => {
       const chat = res.data;
 
       if (chat?.id && !messageCache[chat.id]) {
+        // dohvatiti poruke iz baze ukoliko chat nije evidentiran u cacheu
         const msgRes = await axios.get(
           `http://localhost:8000/chats/${chat.id}/messages`
         );
@@ -235,9 +239,8 @@ export const App = () => {
             {activePrivateChat ? (
               <>
                 <Button
-                  variant="dark"
-                  size="sm"
-                  className="mb-2"
+                  variant="outline-dark"
+                  className="my-2 mx-0"
                   onClick={() => setActivePrivateChat(null)}
                 >
                   Nazad na globalni chat

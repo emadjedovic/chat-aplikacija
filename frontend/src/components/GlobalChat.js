@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { MessageBubble } from "./MessageBubble";
 
@@ -9,18 +9,16 @@ export const GlobalChat = ({
   sendMessage,
   user,
 }) => {
-  const chatEndRef = useRef(null);
-
-  // scroll do dna kad se klikne dugme za isto
+  const chatEndRef = useRef(null); // za scrollanje do dna
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   const lastMessageId = useRef(null);
 
+  // kada stigne nova poruka ide scroll do dna
   useEffect(() => {
     if (!messages.length) return;
-
     const newestId = messages[messages.length - 1].id;
     if (newestId > lastMessageId.current) {
       scrollToBottom();
@@ -39,7 +37,7 @@ export const GlobalChat = ({
           {messages.map((m) => {
             return (
               <MessageBubble
-              key={m.id}
+                key={m.id}
                 message={m}
                 isCurrentUser={user && m.user_id === user.id}
               />
@@ -64,10 +62,9 @@ export const GlobalChat = ({
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
-
               // auto-resize
-              e.target.style.height = "auto"; // reset height
-              e.target.style.height = e.target.scrollHeight + "px"; // set to scrollHeight
+              e.target.style.height = "auto"; // reset visine
+              e.target.style.height = e.target.scrollHeight + "px";
             }}
             placeholder="Upiši poruku..."
             onKeyDown={(e) => {

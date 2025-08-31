@@ -9,12 +9,20 @@ export const PrivateChat = ({
   sendMessage,
   user,
 }) => {
-  const chatId = activeChat?.id;
-  const messages = chatId ? messageCache[chatId] || [] : [];
+  let chatId;
+  let messages = [];
+
+  if (activeChat && activeChat.id) {
+    chatId = activeChat.id;
+    messages = messageCache[chatId] || [];
+  } else {
+    chatId = null;
+    messages = [];
+  }
+
   const [input, setInput] = useState("");
 
   const chatEndRef = useRef(null);
-
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
@@ -24,7 +32,9 @@ export const PrivateChat = ({
   useEffect(() => {
     if (!messages.length) return;
 
-    const newestId = messages[messages.length - 1].id || messages.length; // fallback for optimistic messages
+    // optimisticne poruke nisu stigle dobiti id polje
+    const newestId = messages[messages.length - 1].id || messages.length;
+
     if (newestId > lastMessageId.current) {
       scrollToBottom();
       lastMessageId.current = newestId;
@@ -41,7 +51,7 @@ export const PrivateChat = ({
     <Container fluid className="p-3">
       <h3 className="text-center mb-4">
         <b>
-          Chat with{" "}
+          Chat sa{" "}
           {activeChat.user1.id === user.id
             ? activeChat.user2.username
             : activeChat.user1.username}
@@ -50,9 +60,9 @@ export const PrivateChat = ({
 
       {messages.length > 0 ? (
         <div className="chat-container">
-          {messages.map((m, idx) => (
+          {messages.map((m) => (
             <MessageBubble
-              key={m.id || idx}
+              key={m.id}
               message={m}
               isCurrentUser={user && m.sender_id === user.id}
             />

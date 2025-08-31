@@ -23,9 +23,7 @@ export const Sidebar = ({ users, user, unreadBadges, onUserSelect }) => {
                     {u.joined_recently && (
                       <span className="badge bg-success ms-2">novi</span>
                     )}
-                    {unreadBadges[u.id] && (
-                      <span className="badge-dot"></span>
-                    )}
+                    {unreadBadges[u.id] && <span className="badge-dot"></span>}
                   </ListGroup.Item>
                 ))}
             </ListGroup>

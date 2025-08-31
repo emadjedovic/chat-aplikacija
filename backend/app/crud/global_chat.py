@@ -36,7 +36,7 @@ def create_user(db: Session, username: str) -> User:
 
 def create_system_join_message(db: Session, username: str):
     system_msg = Message(
-        content=f"{username} se pridruzio chatu!",
+        content=f"{username} se pridružio chatu!",
         type=MessageType.SYSTEM,
         created_at=get_current_time(),
     )
