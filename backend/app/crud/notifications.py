@@ -28,6 +28,7 @@ def create_new_message_notification(db: Session, recipient_id: int, chat_id: int
     db.refresh(notif)
     return notif
 
+
 def mark_notifications_read(db: Session, user_id: int, chat_id: int):
     q = db.query(Notification).filter(
         Notification.recipient_id == user_id,
@@ -39,6 +40,7 @@ def mark_notifications_read(db: Session, user_id: int, chat_id: int):
     return updated
 
 
+# trazi sve chatove koji imaju barem jednu neprocitanu poruku
 def unread_flags(db: Session, current_user_id: int):
     chats = (
         db.query(Chat)

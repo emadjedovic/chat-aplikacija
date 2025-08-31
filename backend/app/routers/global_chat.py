@@ -2,14 +2,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import random_username.generate as rug
-from dependencies import get_db
+from database import get_db
 from schemas.message import MessageOut, MessageIn
 from schemas.user import UserOut, UserIn
 from crud.global_chat import (
     create_user,
     create_system_join_message,
     mark_user_active,
-    list_active_users_window,
+    list_active_users,
     poll_new_messages,
     send_user_message,
 )
@@ -30,19 +30,19 @@ def join(usernameReq: UserIn, db: Session = Depends(get_db)):
     return user
 
 
-@router.get("/active-users")
+@router.get("/users/active")
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     mark_user_active(db, current_user_id)
-    return list_active_users_window(db)
+    return list_active_users(db)
 
 
-@router.get("/messages/new", response_model=List[MessageOut])
-def new_messages(user_id: int, db: Session = Depends(get_db)):
+@router.get("/messages/unread", response_model=List[MessageOut])
+def get_unread_messages(user_id: int, db: Session = Depends(get_db)):
     return poll_new_messages(db, user_id)
 
 
-@router.post("/send_message", response_model=MessageOut)
-def send_message(msg: MessageIn, db: Session = Depends(get_db)):
+@router.post("/messages", response_model=MessageOut)
+def post_message(msg: MessageIn, db: Session = Depends(get_db)):
     saved = send_user_message(db, msg)
     if saved is None:
         raise HTTPException(

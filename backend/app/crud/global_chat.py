@@ -55,7 +55,7 @@ def mark_user_active(db: Session, user_id: int):
 
 
 # samo aktivni useri, odnosno aktivnost do 11s (jer polling radi svakih 5s-10s)
-def list_active_users_window(db: Session):
+def list_active_users(db: Session):
     active_users = (
         db.query(User)
         .filter(User.last_active > (datetime.utcnow() - timedelta(seconds=11)))
@@ -69,6 +69,7 @@ def list_active_users_window(db: Session):
     return result
 
 
+# cita iz globalnog cachea
 def poll_new_messages(db: Session, user_id: int):
     with message_cache_lock:
         # ukoliko user nije u ovoj mapi, znaci da nije vidio nista poruka do sad

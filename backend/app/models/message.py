@@ -5,11 +5,10 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
-    Boolean,
     Enum as SQLAlchemyEnum,
 )
 from enum import Enum
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from database import Base
 

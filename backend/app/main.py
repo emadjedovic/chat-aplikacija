@@ -63,7 +63,7 @@ def read_root(db: Session = Depends(get_db)):
     }
 
 
-@app.get("/active-users-test", tags=["test"])
+@app.get("/users/active-test", tags=["test"])
 def get_active_users(current_user_id: int, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == current_user_id).first()
     if user:

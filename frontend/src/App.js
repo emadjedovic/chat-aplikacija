@@ -54,7 +54,7 @@ export const App = () => {
     const pollMessages = setInterval(async () => {
       try {
         const responseMessages = await axios.get(
-          `http://localhost:8000/messages/new?user_id=${user.id}`
+          `http://localhost:8000/messages/unread?user_id=${user.id}`
         );
         const data = responseMessages.data; // an array
         if (data && Array.isArray(data)) {
@@ -75,7 +75,7 @@ export const App = () => {
     const pollActiveUsers = setInterval(async () => {
       try {
         const responseUsers = await axios.get(
-          `http://localhost:8000/active-users?current_user_id=${user.id}`
+          `http://localhost:8000/users/active?current_user_id=${user.id}`
         );
         setUsers(responseUsers.data);
       } catch (err) {
@@ -95,7 +95,7 @@ export const App = () => {
         user_id: user.id,
       };
       const response = await axios.post(
-        "http://localhost:8000/send_message",
+        "http://localhost:8000/messages",
         newMessage
       );
       setMessages((prev) => [...prev, response.data]);
@@ -110,7 +110,7 @@ export const App = () => {
     if (!user) return;
     axios
       .get(
-        `http://localhost:8000/notifications/unread-flags?current_user_id=${user.id}`
+        `http://localhost:8000/notifications/unread?current_user_id=${user.id}`
       )
       .then((res) => setUnreadFlags(res.data || {}))
       .catch((err) => console.error("Unread flags hydrate error:", err));
@@ -165,9 +165,11 @@ export const App = () => {
   const openPrivateChat = async (otherUser) => {
     if (!user) return;
     try {
-      const res = await axios.get("http://localhost:8000/chats/get-or-create", {
-        params: { creator_id: user.id, other_user_id: otherUser.id },
+      const res = await axios.post("http://localhost:8000/chats", {
+        user1_id: user.id,
+        user2_id: otherUser.id,
       });
+
       const chat = res.data;
 
       if (chat?.id && !messageCache[chat.id]) {
@@ -178,9 +180,10 @@ export const App = () => {
       }
 
       // Clear notifications for this chat (server + local)
-      await axios.post("http://localhost:8000/notifications/mark-read", null, {
-        params: { user_id: user.id, chat_id: chat.id },
+      await axios.patch(`http://localhost:8000/notifications/${chat.id}/read`, {
+        user_id: user.id,
       });
+
       setUnreadFlags((prev) => {
         const next = { ...prev };
         delete next[otherUser.id];
