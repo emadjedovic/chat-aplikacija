@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from crud.notifications import (
     mark_notifications_read,
-    unread_flags,
+    unread_badges,
 )
 from schemas.notification import NotificationMarkRead
 
@@ -18,11 +18,11 @@ npr. return {
 
 
 @router.get("/unread")
-def get_unread_flags(
+def get_unread_badges(
     current_user_id: int,
     db: Session = Depends(get_db),
 ):
-    return unread_flags(db, current_user_id=current_user_id)
+    return unread_badges(db, current_user_id=current_user_id)
 
 
 """

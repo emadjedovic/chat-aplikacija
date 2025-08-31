@@ -17,4 +17,4 @@ class NotificationOut(BaseModel):
     is_read: bool
 
     class Config:
-        from_attributes = True
+       orm_mode = True
